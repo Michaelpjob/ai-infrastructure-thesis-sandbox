@@ -1,0 +1,1984 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Infrastructure Thesis Sandbox</title>
+  <style>
+    :root {
+      --bg: #faf6ed;
+      --paper: #fdf9f0;
+      --ink: #1a1612;
+      --ink-soft: #5a5550;
+      --ink-faint: #8a8578;
+      --rule: #c9c1ad;
+      --rule-light: #d8d2c2;
+      --accent: #8a1d1d;
+      --warn: #b8631d;
+      --ok: #3d6147;
+      --highlight: #f5efde;
+      --compute: #2d4a5a;
+      --power: #7a4a2d;
+      --edge: #4a5a2d;
+      --satellite: #7a6a3d;
+      --highrisk: #8a3d2d;
+      --watch: #5a5550;
+      --shadow: 0 30px 60px -32px rgba(0, 0, 0, 0.14);
+    }
+
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; background: var(--bg); }
+    body {
+      margin: 0;
+      padding: 24px;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: Charter, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+      font-size: 14px;
+      line-height: 1.55;
+      font-feature-settings: "kern", "liga", "tnum", "lnum";
+    }
+
+    button, input, select, textarea { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+
+    .app {
+      max-width: 1220px;
+      margin: 0 auto;
+      background: var(--paper);
+      border: 1px solid var(--rule-light);
+      box-shadow: var(--shadow);
+    }
+
+    .head-bar {
+      padding: 28px 36px 22px;
+      border-bottom: 1px solid var(--rule);
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      font-variant: small-caps;
+      letter-spacing: 0.18em;
+      font-size: 12px;
+      color: var(--ink-soft);
+      margin: 0 0 4px;
+      text-transform: lowercase;
+    }
+
+    .scenario-title {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .scenario-title input {
+      width: min(620px, 80vw);
+      border: 0;
+      border-bottom: 1px solid transparent;
+      background: transparent;
+      padding: 0 0 2px;
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.2;
+      outline: none;
+    }
+
+    .scenario-title input:focus {
+      border-bottom-color: var(--ink);
+      background: rgba(255, 255, 255, 0.45);
+    }
+
+    .scenario-title input:disabled {
+      color: var(--ink);
+      opacity: 1;
+    }
+
+    .subline {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 5px;
+      color: var(--ink-soft);
+      font-size: 12.5px;
+      font-style: italic;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      display: inline-block;
+      background: var(--ink-faint);
+      transform: translateY(1px);
+    }
+    .status-dot.draft { background: var(--warn); }
+    .status-dot.tracking { background: var(--ok); }
+    .status-dot.closed { background: var(--accent); }
+
+    .headline-metrics {
+      display: flex;
+      justify-content: flex-end;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 22px;
+      max-width: 720px;
+    }
+
+    .metric {
+      min-width: 110px;
+      text-align: left;
+    }
+
+    .metric .label {
+      color: var(--ink-soft);
+      font-size: 11px;
+      font-style: italic;
+      text-transform: lowercase;
+    }
+
+    .metric .value {
+      margin-top: 1px;
+      font-size: 18px;
+      line-height: 1.1;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums lining-nums;
+      white-space: nowrap;
+    }
+
+    .metric .hint {
+      margin-top: 3px;
+      color: var(--ink-soft);
+      font-size: 11px;
+      font-style: italic;
+      white-space: nowrap;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 36px;
+      border-bottom: 1px solid var(--rule);
+      overflow-x: auto;
+    }
+
+    .tab {
+      padding: 14px 20px 12px;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      background: transparent;
+      color: var(--ink-soft);
+      font-size: 11.5px;
+      font-variant: small-caps;
+      letter-spacing: 0.16em;
+      text-transform: lowercase;
+      white-space: nowrap;
+    }
+
+    .tab:hover, .tab.active { color: var(--ink); }
+    .tab.active { border-bottom-color: var(--ink); font-weight: 700; }
+
+    .pane { padding: 32px 36px 48px; }
+
+    .section { margin: 0 0 28px; }
+    .section:last-child { margin-bottom: 0; }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 16px;
+      margin: 0 0 12px;
+      flex-wrap: wrap;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      font-size: 12.5px;
+      font-style: italic;
+      font-weight: 400;
+      color: var(--ink-soft);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .panel {
+      border: 1px solid var(--rule);
+      background: var(--paper);
+      padding: 16px 18px 14px;
+      min-width: 0;
+    }
+
+    .summary-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .summary-card {
+      border: 1px solid var(--rule);
+      background: var(--paper);
+      padding: 14px 16px 12px;
+    }
+
+    .summary-card .lbl {
+      color: var(--ink-soft);
+      font-size: 10.5px;
+      font-variant: small-caps;
+      letter-spacing: 0.14em;
+      text-transform: lowercase;
+    }
+
+    .summary-card .val {
+      margin-top: 4px;
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums lining-nums;
+    }
+
+    .summary-card .sub {
+      color: var(--ink-soft);
+      font-size: 11.5px;
+      font-style: italic;
+      margin-top: 4px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      min-height: 30px;
+      padding: 5px 10px;
+      border: 1px solid var(--ink);
+      background: transparent;
+      color: var(--ink);
+      font-size: 11.5px;
+      font-variant: small-caps;
+      letter-spacing: 0.12em;
+      text-transform: lowercase;
+    }
+
+    .btn:hover { background: var(--ink); color: var(--paper); }
+    .btn.primary { background: var(--ink); color: var(--paper); }
+    .btn.primary:hover { background: var(--accent); border-color: var(--accent); }
+    .btn.subtle { border-color: var(--rule); color: var(--ink-soft); }
+    .btn.subtle:hover { background: var(--rule); color: var(--ink); }
+    .btn.danger { border-color: var(--accent); color: var(--accent); }
+    .btn.danger:hover { background: var(--accent); color: var(--paper); }
+    .btn.tiny { min-height: 24px; padding: 3px 8px; font-size: 10.5px; }
+    .btn.icon { width: 28px; min-width: 28px; padding: 0; letter-spacing: 0; font-variant: normal; font-weight: 700; }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .badge {
+      display: inline-block;
+      border: 0.5px solid currentColor;
+      padding: 1px 7px;
+      font-size: 10.5px;
+      font-variant: small-caps;
+      letter-spacing: 0.08em;
+      text-transform: lowercase;
+      white-space: nowrap;
+    }
+    .badge.draft { color: var(--warn); }
+    .badge.tracking { color: var(--ok); }
+    .badge.closed { color: var(--accent); }
+    .badge.core { color: var(--ok); }
+    .badge.satellite { color: var(--satellite); }
+    .badge.high-risk { color: var(--highrisk); }
+    .badge.watch { color: var(--watch); }
+
+    .delta { font-weight: 700; font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; }
+    .delta.pos { color: var(--ok); }
+    .delta.neg { color: var(--accent); }
+    .muted { color: var(--ink-soft); font-style: italic; }
+    .mono {
+      font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .chart-wrap {
+      width: 100%;
+      min-height: 250px;
+      border-top: 1px solid var(--ink);
+      border-bottom: 1px solid var(--ink);
+      padding: 12px 0 6px;
+    }
+
+    .chart-wrap svg {
+      display: block;
+      width: 100%;
+      height: 250px;
+    }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      color: var(--ink-soft);
+      font-size: 11.5px;
+      font-style: italic;
+    }
+
+    .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+    .swatch { width: 10px; height: 10px; display: inline-block; }
+
+    .split-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .mini-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      border-top: 1px solid var(--ink);
+      border-bottom: 1px solid var(--ink);
+      padding: 8px 0;
+    }
+
+    .mini-row {
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr) 72px;
+      gap: 10px;
+      align-items: baseline;
+      padding: 2px 0;
+      font-size: 12.5px;
+    }
+
+    .mini-row .name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .drift-list {
+      display: flex;
+      flex-direction: column;
+      border-top: 1px solid var(--ink);
+      border-bottom: 1px solid var(--ink);
+      font-variant-numeric: tabular-nums lining-nums;
+    }
+
+    .drift-head, .drift-row {
+      display: grid;
+      grid-template-columns: minmax(96px, 1fr) minmax(130px, 1.4fr) 64px 64px 68px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .drift-head {
+      padding: 7px 10px 5px;
+      border-bottom: 0.5px solid var(--ink);
+      color: var(--ink-soft);
+      font-size: 11.5px;
+      font-style: italic;
+    }
+
+    .drift-row {
+      min-height: 38px;
+      padding: 7px 10px;
+      border-bottom: 0.5px solid var(--rule-light);
+      font-size: 12.5px;
+    }
+    .drift-row:last-child { border-bottom: 0; }
+    .drift-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .drift-num { text-align: right; white-space: nowrap; }
+    .drift-rail { position: relative; height: 14px; background: var(--rule-light); }
+    .drift-fill { height: 100%; min-width: 2px; }
+    .drift-marker { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--ink); transform: translateX(-0.5px); }
+
+    .table-wrap { width: 100%; overflow-x: auto; }
+    .table-wrap.compact { overflow-x: visible; }
+    table {
+      width: 100%;
+      min-width: 980px;
+      border-collapse: collapse;
+      font-size: 12.5px;
+      line-height: 1.45;
+      font-variant-numeric: tabular-nums lining-nums;
+    }
+    table.compact { min-width: 0; }
+    th {
+      text-align: left;
+      padding: 8px 10px 6px;
+      border-top: 1px solid var(--ink);
+      border-bottom: 0.5px solid var(--ink);
+      color: var(--ink-soft);
+      font-size: 11.5px;
+      font-style: italic;
+      font-weight: 400;
+      white-space: nowrap;
+    }
+    td {
+      padding: 7px 10px;
+      border-bottom: 0.5px solid var(--rule-light);
+      vertical-align: middle;
+    }
+    tbody tr:last-child td { border-bottom: 1px solid var(--ink); }
+    tbody tr:hover { background: rgba(0, 0, 0, 0.015); }
+    .num { text-align: right; white-space: nowrap; }
+
+    .removed td {
+      color: var(--ink-faint);
+      text-decoration: line-through;
+    }
+
+    input.cell, select.cell, textarea.cell {
+      width: 100%;
+      border: 0;
+      border-bottom: 1px solid transparent;
+      background: transparent;
+      padding: 2px 0;
+      outline: none;
+      font-size: 12.5px;
+    }
+    input.cell:focus, select.cell:focus, textarea.cell:focus {
+      border-bottom-color: var(--ink);
+      background: rgba(255, 255, 255, 0.5);
+    }
+    input.cell.num { text-align: right; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
+    .field { display: flex; flex-direction: column; gap: 5px; color: var(--ink-soft); font-size: 12px; font-style: italic; }
+    .field input, .field select, .field textarea {
+      min-height: 31px;
+      border: 1px solid var(--rule);
+      background: var(--paper);
+      padding: 5px 8px;
+      outline: none;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--ink); }
+
+    .scenario-list { display: flex; flex-direction: column; gap: 10px; }
+    .scenario-item {
+      border: 1px solid var(--rule);
+      padding: 12px 14px;
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) minmax(320px, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+      background: var(--paper);
+    }
+    .scenario-item.active { border-color: var(--ink); background: var(--highlight); }
+    .scenario-name { font-size: 14px; font-weight: 700; }
+    .scenario-meta { margin-top: 2px; color: var(--ink-soft); font-size: 11.5px; font-style: italic; }
+    .scenario-stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(70px, 1fr));
+      gap: 10px;
+      color: var(--ink-soft);
+      font-size: 11.5px;
+    }
+    .scenario-stats strong { display: block; color: var(--ink); font-size: 13px; font-style: normal; }
+
+    .warning-list { display: flex; flex-direction: column; gap: 8px; }
+    .warning {
+      display: grid;
+      grid-template-columns: 76px 1fr;
+      gap: 10px;
+      padding: 8px 12px;
+      border: 0.5px solid var(--warn);
+      background: rgba(184, 99, 29, 0.04);
+      font-size: 12.5px;
+    }
+    .warning.bad { border-color: var(--accent); background: rgba(138, 29, 29, 0.04); }
+    .warning.good { border-color: var(--ok); background: rgba(61, 97, 71, 0.04); }
+    .warning .tag {
+      font-size: 10.5px;
+      font-variant: small-caps;
+      letter-spacing: 0.1em;
+      text-transform: lowercase;
+      font-weight: 700;
+    }
+
+    .empty {
+      padding: 24px;
+      text-align: center;
+      color: var(--ink-soft);
+      font-style: italic;
+      border: 1px dashed var(--rule);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      background: rgba(26, 22, 18, 0.34);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal {
+      width: min(680px, 100%);
+      background: var(--paper);
+      border: 1px solid var(--ink);
+      box-shadow: var(--shadow);
+      padding: 22px 24px;
+    }
+    .modal h2 { margin-bottom: 10px; }
+    .modal p { margin: 0 0 14px; color: var(--ink-soft); }
+    .modal-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; }
+    .modal-card { border: 1px solid var(--rule); padding: 12px; }
+    .modal-card strong { display: block; margin-bottom: 4px; }
+
+    .footer-note {
+      margin-top: 28px;
+      padding-top: 14px;
+      border-top: 0.5px solid var(--rule);
+      color: var(--ink-faint);
+      font-size: 11px;
+      font-style: italic;
+      text-align: center;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 980px) {
+      body { padding: 10px; }
+      .head-bar, .pane { padding-left: 18px; padding-right: 18px; }
+      .tabs { padding: 0 18px; }
+      .summary-row, .grid-2, .grid-3, .split-list, .form-grid { grid-template-columns: 1fr; }
+      .headline-metrics { justify-content: flex-start; }
+      .scenario-item { grid-template-columns: 1fr; }
+      .scenario-stats { grid-template-columns: repeat(2, 1fr); }
+      .modal-cards { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 640px) {
+      .drift-head { display: none; }
+      .drift-row { grid-template-columns: 1fr 1fr; gap: 6px 12px; }
+      .drift-name, .drift-rail { grid-column: 1 / -1; }
+      .drift-num { text-align: left; }
+      .mini-row { grid-template-columns: 64px 1fr; }
+      .mini-row .num { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var STORAGE_KEY = "ai-infra-tracker-v1";
+      var OLD_STORAGE_KEY = "ai-infra-portfolio-live-v1";
+      var SCHEMA_VERSION = 1;
+      var MAX_SNAPSHOTS = 365;
+      var BENCHMARK_SYMBOL = "SPY";
+      var tabs = [
+        ["scenarios", "Scenarios"],
+        ["dashboard", "Dashboard"],
+        ["positions", "Positions"],
+        ["quotes", "Quotes & data"],
+        ["export", "Export"]
+      ];
+      var tiers = ["Core", "Satellite", "High Risk", "Watch"];
+      var providers = { stooq: "Stooq", finnhub: "Finnhub", alphaVantage: "Alpha Vantage" };
+      var colors = ["#2d4a5a", "#7a4a2d", "#4a5a2d", "#7a6a3d", "#8a3d2d", "#3d6147", "#8a1d1d", "#5a5550"];
+
+      var activeTab = "scenarios";
+      var quoteBusy = false;
+      var quoteMessage = "Quotes use cached prices until refreshed.";
+      var compareIds = [];
+      var modal = null;
+      var migrationProblem = null;
+      var store = loadStore();
+
+      function seedStore() {
+        var now = new Date().toISOString();
+        var positions = [
+          pos("NVDA", "Nvidia", "Compute", "Accelerators", "Core", 7.0),
+          pos("TSM", "Taiwan Semiconductor", "Compute", "Foundry", "Core", 6.0),
+          pos("ASML", "ASML Holding", "Compute", "Semicap", "Core", 5.0),
+          pos("AVGO", "Broadcom", "Compute", "Networking / ASIC", "Core", 5.0),
+          pos("MRVL", "Marvell Technology", "Compute", "AI silicon", "Satellite", 4.0),
+          pos("MU", "Micron Technology", "Compute", "Memory", "Satellite", 3.0),
+          pos("CRWV", "CoreWeave", "Compute", "AI cloud", "High Risk", 4.0),
+          pos("ETN", "Eaton", "Power", "Electrical equipment", "Core", 8.0),
+          pos("VRT", "Vertiv", "Power", "Thermal and power", "Satellite", 7.0),
+          pos("GEV", "GE Vernova", "Power", "Grid equipment", "Satellite", 7.0),
+          pos("CEG", "Constellation Energy", "Power", "Generation", "Satellite", 6.0),
+          pos("PWR", "Quanta Services", "Power", "Grid services", "Core", 5.0),
+          pos("NEE", "NextEra Energy", "Power", "Utilities", "Core", 4.0),
+          pos("SMR", "NuScale Power", "Power", "Nuclear optionality", "High Risk", 4.0),
+          pos("ARM", "Arm Holdings", "Edge", "CPU IP", "Satellite", 7.0),
+          pos("QCOM", "Qualcomm", "Edge", "Device silicon", "Core", 5.0),
+          pos("ON", "ON Semiconductor", "Edge", "Power semis", "Watch", 4.0),
+          pos("ALAB", "Astera Labs", "Edge", "Connectivity", "High Risk", 5.0),
+          pos("AAPL", "Apple", "Edge", "Device platform", "Core", 4.0)
+        ];
+        return {
+          schemaVersion: SCHEMA_VERSION,
+          activeScenarioId: "scn_base",
+          scenarios: [{
+            id: "scn_base",
+            name: "Base Case",
+            createdAt: now,
+            lockedAt: null,
+            closedAt: null,
+            status: "draft",
+            positions: positions,
+            themeTargets: { Compute: 30, Power: 45, Edge: 25 },
+            riskLimits: { maxSingle: 8, maxHighRiskBucket: 25, maxTheme: 50, maxHighRiskSingle: 3, maxWatchBucket: 5, minCoreBucket: 30 },
+            snapshots: [],
+            notes: ""
+          }],
+          settings: {
+            provider: "stooq",
+            apiKey: "",
+            onboardingDismissed: false,
+            lastQuoteRefresh: null,
+            quoteCache: seedQuoteCache(now)
+          }
+        };
+      }
+
+      function pos(symbol, name, theme, category, tier, weight) {
+        return {
+          symbol: symbol,
+          name: name,
+          theme: theme,
+          tier: tier,
+          category: category,
+          weight: weight,
+          inceptionPrice: null,
+          inceptionDate: null
+        };
+      }
+
+      function seedQuoteCache(now) {
+        var prices = {
+          NVDA: 860, TSM: 178.32, ASML: 910, AVGO: 1360, MRVL: 71, MU: 118, CRWV: 45,
+          ETN: 315, VRT: 95, GEV: 991.30, CEG: 190, PWR: 260, NEE: 72, SMR: 8.5,
+          ARM: 120, QCOM: 172, ON: 70, ALAB: 78, AAPL: 190, SPY: 520
+        };
+        var cache = {};
+        Object.keys(prices).forEach(function (symbol) {
+          cache[symbol] = { price: prices[symbol], asOf: now, source: "Seed" };
+        });
+        return cache;
+      }
+
+      function loadStore() {
+        var raw = null;
+        try {
+          raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            var parsed = JSON.parse(raw);
+            if (parsed.schemaVersion === SCHEMA_VERSION) return normalizeStore(parsed);
+            migrationProblem = { raw: raw, message: "Unsupported schema version " + parsed.schemaVersion + "." };
+            return seedStore();
+          }
+          var oldRaw = localStorage.getItem(OLD_STORAGE_KEY);
+          if (oldRaw) {
+            var migrated = migrateOld(JSON.parse(oldRaw));
+            saveStore(migrated);
+            return migrated;
+          }
+        } catch (err) {
+          migrationProblem = { raw: raw, message: err && err.message ? err.message : String(err) };
+          return seedStore();
+        }
+        return seedStore();
+      }
+
+      function migrateOld(old) {
+        var now = new Date().toISOString();
+        var quoteCache = seedQuoteCache(now);
+        var sourcePositions = Array.isArray(old.positions) ? old.positions : [];
+        var positions = sourcePositions.map(function (p) {
+          var symbol = cleanSymbol(p.symbol || p.ticker);
+          var price = number(p.livePrice) || number(p.manualPrice);
+          if (symbol && price) quoteCache[symbol] = { price: price, asOf: p.priceTime || now, source: p.priceSource || "Migrated" };
+          return {
+            symbol: symbol || "NEW",
+            name: p.name || "New position",
+            theme: p.theme || p.primary_play || "Compute",
+            tier: validTier(p.tier || p.risk_tier),
+            category: p.category || "",
+            weight: number(p.targetPct != null ? p.targetPct : p.weight),
+            inceptionPrice: null,
+            inceptionDate: null
+          };
+        });
+        if (!positions.length) positions = seedStore().scenarios[0].positions;
+        return normalizeStore({
+          schemaVersion: SCHEMA_VERSION,
+          activeScenarioId: "scn_migrated",
+          scenarios: [{
+            id: "scn_migrated",
+            name: old.name || "Migrated Draft",
+            createdAt: now,
+            lockedAt: null,
+            closedAt: null,
+            status: "draft",
+            positions: positions,
+            themeTargets: old.targets || old.target_allocations || { Compute: 30, Power: 45, Edge: 25 },
+            riskLimits: old.riskLimits || old.risk_limits || { maxSingle: 8, maxHighRiskBucket: 25, maxTheme: 50, maxHighRiskSingle: 3, maxWatchBucket: 5, minCoreBucket: 30 },
+            snapshots: [],
+            notes: ""
+          }],
+          settings: {
+            provider: (old.settings && old.settings.provider) || "stooq",
+            apiKey: (old.settings && old.settings.apiKey) || "",
+            onboardingDismissed: false,
+            lastQuoteRefresh: (old.settings && old.settings.lastRefresh) || null,
+            quoteCache: quoteCache
+          }
+        });
+      }
+
+      function normalizeStore(input) {
+        var next = input || {};
+        next.schemaVersion = SCHEMA_VERSION;
+        next.settings = Object.assign({ provider: "stooq", apiKey: "", onboardingDismissed: false, lastQuoteRefresh: null, quoteCache: {} }, next.settings || {});
+        next.settings.provider = providers[next.settings.provider] ? next.settings.provider : "stooq";
+        next.settings.quoteCache = next.settings.quoteCache || {};
+        next.scenarios = Array.isArray(next.scenarios) ? next.scenarios.map(normalizeScenario) : seedStore().scenarios;
+        if (!next.scenarios.length) next.scenarios = seedStore().scenarios;
+        if (!next.activeScenarioId || !next.scenarios.some(function (s) { return s.id === next.activeScenarioId; })) {
+          next.activeScenarioId = next.scenarios[0].id;
+        }
+        return next;
+      }
+
+      function normalizeScenario(s) {
+        var created = s.createdAt || new Date().toISOString();
+        return {
+          id: s.id || uid("scn"),
+          name: s.name || "Untitled Scenario",
+          createdAt: created,
+          lockedAt: s.lockedAt || null,
+          closedAt: s.closedAt || null,
+          status: ["draft", "tracking", "closed"].indexOf(s.status) >= 0 ? s.status : "draft",
+          positions: Array.isArray(s.positions) ? s.positions.map(normalizePosition) : [],
+          themeTargets: Object.assign({ Compute: 30, Power: 45, Edge: 25 }, s.themeTargets || {}),
+          riskLimits: Object.assign({ maxSingle: 8, maxHighRiskBucket: 25, maxTheme: 50, maxHighRiskSingle: 3, maxWatchBucket: 5, minCoreBucket: 30 }, s.riskLimits || {}),
+          snapshots: Array.isArray(s.snapshots) ? s.snapshots.slice(-MAX_SNAPSHOTS) : [],
+          notes: s.notes || ""
+        };
+      }
+
+      function normalizePosition(p) {
+        return {
+          symbol: cleanSymbol(p.symbol || "NEW"),
+          name: p.name || "New position",
+          theme: p.theme || "Compute",
+          tier: validTier(p.tier),
+          category: p.category || "",
+          weight: number(p.weight),
+          inceptionPrice: p.inceptionPrice == null ? null : number(p.inceptionPrice),
+          inceptionDate: p.inceptionDate || null,
+          removedAt: p.removedAt || null,
+          removedContribution: p.removedContribution == null ? null : number(p.removedContribution)
+        };
+      }
+
+      function saveStore(next) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next || store));
+      }
+
+      function currentScenario() {
+        return store.scenarios.find(function (s) { return s.id === store.activeScenarioId; }) || store.scenarios[0];
+      }
+
+      function replaceScenario(id, updater) {
+        store.scenarios = store.scenarios.map(function (s) {
+          return s.id === id ? updater(clone(s)) : s;
+        });
+        saveStore();
+      }
+
+      function clone(value) {
+        return JSON.parse(JSON.stringify(value));
+      }
+
+      function scenarioWeights(scenario) {
+        var weights = {};
+        scenario.positions.forEach(function (p) {
+          if (!p.removedAt) weights[p.symbol] = number(p.weight);
+        });
+        return weights;
+      }
+
+      function activePositions(scenario) {
+        return scenario.positions.filter(function (p) { return !p.removedAt && number(p.weight) > 0; });
+      }
+
+      function latestSnapshot(scenario) {
+        if (!scenario.snapshots.length) return null;
+        return scenario.snapshots[scenario.snapshots.length - 1];
+      }
+
+      function quoteFor(symbol, scenario) {
+        symbol = cleanSymbol(symbol);
+        if (scenario && scenario.status === "closed") {
+          var snap = latestSnapshot(scenario);
+          if (snap && snap.prices && number(snap.prices[symbol]) > 0) {
+            return { price: number(snap.prices[symbol]), asOf: snap.date, source: "Closed snapshot" };
+          }
+        }
+        return store.settings.quoteCache[symbol] || null;
+      }
+
+      function currentPrice(symbol, scenario) {
+        var quote = quoteFor(symbol, scenario);
+        return quote ? number(quote.price) : 0;
+      }
+
+      function computeScenario(scenario) {
+        var active = activePositions(scenario);
+        var covered = 0;
+        var contribution = 0;
+        var equalReturns = [];
+        var positionMetrics = scenario.positions.map(function (p) {
+          var price = currentPrice(p.symbol, scenario);
+          var inception = number(p.inceptionPrice);
+          var hasBaseline = inception > 0;
+          var hasCurrent = price > 0;
+          var activeNow = !p.removedAt && number(p.weight) > 0;
+          var ret = hasBaseline && hasCurrent ? (price - inception) / inception * 100 : null;
+          var contrib = activeNow && ret != null ? number(p.weight) * ret / 100 : 0;
+          if (activeNow && hasBaseline && hasCurrent) {
+            covered += 1;
+            contribution += contrib;
+            equalReturns.push(ret);
+          }
+          if (p.removedAt && p.removedContribution != null) contribution += number(p.removedContribution);
+          return {
+            position: p,
+            currentPrice: price,
+            inceptionPrice: inception,
+            returnPct: ret,
+            contribution: p.removedAt && p.removedContribution != null ? number(p.removedContribution) : contrib,
+            active: activeNow,
+            priced: hasCurrent,
+            covered: activeNow && hasBaseline && hasCurrent
+          };
+        });
+
+        var totalWeight = sum(scenario.positions.filter(function (p) { return !p.removedAt; }).map(function (p) { return p.weight; }));
+        var activeCount = active.length;
+        var coveragePct = activeCount ? covered / activeCount * 100 : 0;
+        var equalReturn = equalReturns.length ? sum(equalReturns) / equalReturns.length : null;
+        var spyReturn = benchmarkReturn(scenario);
+        var days = scenario.lockedAt ? daysBetween(scenario.lockedAt, scenario.closedAt || new Date().toISOString()) : 0;
+        var annualized = days > 30 && contribution > -100 ? (Math.pow(1 + contribution / 100, 365 / days) - 1) * 100 : null;
+        var series = scenarioSeries(scenario);
+        var equalSeries = benchmarkSeries(scenario, "equal");
+        var spySeries = benchmarkSeries(scenario, "spy");
+        var maxDrawdown = drawdown(series);
+        var warnings = buildWarnings(scenario, positionMetrics, totalWeight, coveragePct);
+
+        return {
+          scenario: scenario,
+          activeCount: activeCount,
+          covered: covered,
+          coveragePct: coveragePct,
+          totalWeight: totalWeight,
+          cumulativeReturn: scenario.status === "draft" ? null : contribution,
+          equalReturn: equalReturn,
+          spyReturn: spyReturn,
+          annualized: annualized,
+          days: days,
+          maxDrawdown: maxDrawdown,
+          positions: positionMetrics,
+          series: series,
+          equalSeries: equalSeries,
+          spySeries: spySeries,
+          warnings: warnings
+        };
+      }
+
+      function buildWarnings(scenario, positionMetrics, totalWeight, coveragePct) {
+        var warnings = [];
+        if (scenario.status !== "draft" && coveragePct < 100) {
+          warnings.push(["bad", "coverage", "Only " + fmtPct(coveragePct) + " of active positions have both inception and current prices."]);
+        }
+        if (scenario.status === "draft" && Math.abs(totalWeight - 100) > 0.5) {
+          warnings.push(["warn", "weights", "Draft weights sum to " + fmtPct(totalWeight) + ". Unallocated weight earns zero in the experiment."]);
+        }
+        positionMetrics.forEach(function (m) {
+          var p = m.position;
+          if (!p.removedAt && number(p.weight) > number(scenario.riskLimits.maxSingle)) {
+            warnings.push(["warn", "sizing", p.symbol + " is " + fmtPct(p.weight) + ", above the " + fmtPct(scenario.riskLimits.maxSingle) + " single-name limit."]);
+          }
+          if (!p.removedAt && p.tier === "High Risk" && number(p.weight) > number(scenario.riskLimits.maxHighRiskSingle)) {
+            warnings.push(["bad", "risk", p.symbol + " is high risk and above the " + fmtPct(scenario.riskLimits.maxHighRiskSingle) + " single-name high-risk limit."]);
+          }
+        });
+        var byTheme = exposureBy("theme", scenario);
+        var byTier = exposureBy("tier", scenario);
+        Object.keys(byTheme).forEach(function (theme) {
+          if (byTheme[theme] > number(scenario.riskLimits.maxTheme)) {
+            warnings.push(["warn", "theme", theme + " is " + fmtPct(byTheme[theme]) + ", above the " + fmtPct(scenario.riskLimits.maxTheme) + " theme cap."]);
+          }
+        });
+        if (byTier["High Risk"] > number(scenario.riskLimits.maxHighRiskBucket)) {
+          warnings.push(["bad", "risk", "High-risk exposure is " + fmtPct(byTier["High Risk"]) + ", above the " + fmtPct(scenario.riskLimits.maxHighRiskBucket) + " bucket limit."]);
+        }
+        if (byTier.Watch > number(scenario.riskLimits.maxWatchBucket)) {
+          warnings.push(["warn", "watch", "Watch exposure is " + fmtPct(byTier.Watch) + ", above the " + fmtPct(scenario.riskLimits.maxWatchBucket) + " limit."]);
+        }
+        if (byTier.Core < number(scenario.riskLimits.minCoreBucket)) {
+          warnings.push(["warn", "core", "Core exposure is " + fmtPct(byTier.Core) + ", below the " + fmtPct(scenario.riskLimits.minCoreBucket) + " floor."]);
+        }
+        if (!warnings.length) warnings.push(["good", "clear", "No active tracking, sizing, or data warnings."]);
+        return warnings;
+      }
+
+      function exposureBy(field, scenario) {
+        var out = {};
+        scenario.positions.forEach(function (p) {
+          if (p.removedAt) return;
+          out[p[field]] = (out[p[field]] || 0) + number(p.weight);
+        });
+        tiers.forEach(function (tier) { if (field === "tier" && out[tier] == null) out[tier] = 0; });
+        return out;
+      }
+
+      function benchmarkReturn(scenario) {
+        if (scenario.status === "draft") return null;
+        var first = scenario.snapshots[0];
+        var start = first && first.prices ? number(first.prices[BENCHMARK_SYMBOL]) : 0;
+        var now = currentPrice(BENCHMARK_SYMBOL, scenario);
+        return start && now ? (now - start) / start * 100 : null;
+      }
+
+      function scenarioSeries(scenario) {
+        if (scenario.status === "draft") return [];
+        return scenario.snapshots.map(function (snap) {
+          return { date: snap.date, value: returnAtSnapshot(scenario, snap) };
+        }).filter(function (point) { return point.value != null; });
+      }
+
+      function benchmarkSeries(scenario, type) {
+        if (scenario.status === "draft") return [];
+        if (type === "spy") {
+          var first = scenario.snapshots[0];
+          var start = first && first.prices ? number(first.prices[BENCHMARK_SYMBOL]) : 0;
+          if (!start) return [];
+          return scenario.snapshots.map(function (snap) {
+            var price = snap.prices ? number(snap.prices[BENCHMARK_SYMBOL]) : 0;
+            return price ? { date: snap.date, value: (price - start) / start * 100 } : null;
+          }).filter(Boolean);
+        }
+        return scenario.snapshots.map(function (snap) {
+          var returns = activePositions(scenario).map(function (p) {
+            var price = snap.prices ? number(snap.prices[p.symbol]) : 0;
+            var inception = number(p.inceptionPrice);
+            return price && inception ? (price - inception) / inception * 100 : null;
+          }).filter(function (v) { return v != null; });
+          return returns.length ? { date: snap.date, value: sum(returns) / returns.length } : null;
+        }).filter(Boolean);
+      }
+
+      function returnAtSnapshot(scenario, snap) {
+        var total = 0;
+        var any = false;
+        scenario.positions.forEach(function (p) {
+          var inception = number(p.inceptionPrice);
+          if (!inception) return;
+          if (p.removedAt && compareDateOnly(snap.date, p.removedAt) > 0 && p.removedContribution != null) {
+            total += number(p.removedContribution);
+            any = true;
+            return;
+          }
+          var price = snap.prices ? number(snap.prices[p.symbol]) : 0;
+          var weight = snap.weights && snap.weights[p.symbol] != null ? number(snap.weights[p.symbol]) : number(p.weight);
+          if (price && weight) {
+            total += weight * ((price - inception) / inception);
+            any = true;
+          }
+        });
+        return any ? total : null;
+      }
+
+      function drawdown(series) {
+        if (!series.length) return null;
+        var peak = series[0].value;
+        var worst = 0;
+        series.forEach(function (point) {
+          if (point.value > peak) peak = point.value;
+          worst = Math.max(worst, peak - point.value);
+        });
+        return worst;
+      }
+
+      function render() {
+        var scenario = currentScenario();
+        var metrics = computeScenario(scenario);
+        document.getElementById("root").innerHTML =
+          '<div class="app">' +
+            renderHeader(scenario, metrics) +
+            renderTabs() +
+            '<div class="pane">' + renderTab(scenario, metrics) + '<div class="footer-note">Tracking is hypothetical. Prices are end-of-day or delayed. This is a science experiment, not a brokerage.</div></div>' +
+          '</div>' +
+          renderModal();
+      }
+
+      function renderHeader(scenario, metrics) {
+        var lockedStrip = scenario.status === "tracking"
+          ? 'Tracking since ' + dateDisplay(scenario.lockedAt) + ' | ' + metrics.days + ' days | ' + signedPct(metrics.cumulativeReturn) + ' cumulative'
+          : scenario.status === "closed"
+            ? 'Closed ' + dateDisplay(scenario.closedAt) + ' | final return ' + signedPct(metrics.cumulativeReturn)
+            : 'A thesis sandbox. Set your weights, lock in a baseline, come back to see how your bet did.';
+        var canRename = scenario.status === "draft";
+        return '' +
+          '<header class="head-bar">' +
+            '<div>' +
+              '<p class="brand">AI Infrastructure Thesis Sandbox</p>' +
+              '<div class="scenario-title">' +
+                '<input aria-label="Scenario name" data-edit-scenario-name value="' + escAttr(scenario.name) + '"' + (canRename ? '' : ' disabled') + '>' +
+                statusBadge(scenario.status) +
+              '</div>' +
+              '<div class="subline"><span class="status-dot ' + scenario.status + '"></span><span>' + esc(lockedStrip) + '</span><span>' + esc(quoteMessage) + '</span></div>' +
+            '</div>' +
+            '<div class="headline-metrics">' +
+              headerMetric(scenario.status === "draft" ? "weight total" : "cumulative", scenario.status === "draft" ? fmtPct(metrics.totalWeight) : signedPct(metrics.cumulativeReturn), scenario.status === "draft" ? "draft allocation" : "since inception") +
+              headerMetric("vs equal", scenario.status === "draft" ? "-" : signedPct(nullDiff(metrics.cumulativeReturn, metrics.equalReturn)), metrics.equalReturn == null ? "same universe" : signedPct(metrics.equalReturn)) +
+              headerMetric("vs SPY", scenario.status === "draft" ? "-" : signedPct(nullDiff(metrics.cumulativeReturn, metrics.spyReturn)), metrics.spyReturn == null ? "benchmark unpriced" : signedPct(metrics.spyReturn)) +
+              headerMetric("coverage", scenario.status === "draft" ? draftCoverage(metrics) : fmtPct(metrics.coveragePct), metrics.covered + " of " + metrics.activeCount + " active") +
+            '</div>' +
+          '</header>';
+      }
+
+      function headerMetric(label, value, hint) {
+        return '<div class="metric"><div class="label">' + esc(label) + '</div><div class="value">' + value + '</div><div class="hint">' + esc(hint || '') + '</div></div>';
+      }
+
+      function renderTabs() {
+        return '<nav class="tabs">' + tabs.map(function (tab) {
+          return '<button class="tab ' + (activeTab === tab[0] ? 'active' : '') + '" data-tab="' + tab[0] + '">' + esc(tab[1]) + '</button>';
+        }).join('') + '</nav>';
+      }
+
+      function renderTab(scenario, metrics) {
+        if (activeTab === "dashboard") return renderDashboard(scenario, metrics);
+        if (activeTab === "positions") return renderPositions(scenario, metrics);
+        if (activeTab === "quotes") return renderQuotes(scenario, metrics);
+        if (activeTab === "export") return renderExport(scenario, metrics);
+        return renderScenarios();
+      }
+
+      function renderDashboard(scenario, metrics) {
+        return '' +
+          '<section class="section">' +
+            '<div class="section-head"><h2>Experiment readout</h2><div class="toolbar">' + scenarioActions(scenario) + '</div></div>' +
+            renderSummaryCards(scenario, metrics) +
+          '</section>' +
+          '<section class="section grid-2">' +
+            '<div class="panel">' +
+              '<div class="section-head"><h2>Cumulative return curve</h2><div class="toolbar"><button class="btn subtle tiny" data-action="refresh-quotes"' + (quoteBusy ? ' disabled' : '') + '>Refresh quotes</button></div></div>' +
+              renderReturnChart(metrics, true) +
+            '</div>' +
+            '<div class="panel">' +
+              '<div class="section-head"><h2>Top contributors / detractors</h2></div>' +
+              renderContributors(metrics) +
+            '</div>' +
+          '</section>' +
+          '<section class="section grid-2">' +
+            '<div class="panel"><div class="section-head"><h2>Target drift</h2></div>' + renderTargetDrift(scenario) + '</div>' +
+            '<div class="panel"><div class="section-head"><h2>Open signals</h2></div>' + renderWarnings(metrics.warnings) + '</div>' +
+          '</section>';
+      }
+
+      function renderSummaryCards(scenario, metrics) {
+        return '<div class="summary-row">' +
+          summaryCard(scenario.status === "draft" ? "status" : "cumulative return", scenario.status === "draft" ? "Draft" : signedPct(metrics.cumulativeReturn), scenario.status === "draft" ? "lock to start tracking" : "since " + dateDisplay(scenario.lockedAt)) +
+          summaryCard("annualized", metrics.annualized == null ? "-" : signedPct(metrics.annualized), metrics.days > 30 ? metrics.days + " days" : "shown after 30 days") +
+          summaryCard("drawdown from peak", metrics.maxDrawdown == null ? "-" : "-" + fmtPct(metrics.maxDrawdown), "from snapshot series") +
+          summaryCard("coverage", scenario.status === "draft" ? draftCoverage(metrics) : fmtPct(metrics.coveragePct), metrics.covered + " of " + metrics.activeCount + " active") +
+        '</div>';
+      }
+
+      function summaryCard(label, value, sub) {
+        return '<div class="summary-card"><div class="lbl">' + esc(label) + '</div><div class="val">' + value + '</div><div class="sub">' + esc(sub || '') + '</div></div>';
+      }
+
+      function renderReturnChart(metrics, withBenchmarks) {
+        if (metrics.scenario.status === "draft") return '<div class="empty">Drafts have no return curve. Lock the scenario to capture inception prices.</div>';
+        var seriesList = [{ name: metrics.scenario.name, points: metrics.series, color: "#8a1d1d" }];
+        if (withBenchmarks) {
+          if (metrics.equalSeries.length) seriesList.push({ name: "Equal-weight", points: metrics.equalSeries, color: "#2d4a5a" });
+          if (metrics.spySeries.length) seriesList.push({ name: "SPY", points: metrics.spySeries, color: "#3d6147" });
+        }
+        if (!seriesList[0].points.length) return '<div class="empty">No snapshots yet. Refresh quotes to append the first data point.</div>';
+        return '<div class="chart-wrap">' + lineChart(seriesList) + '</div>' +
+          '<div class="legend">' + seriesList.map(function (s) { return '<span class="legend-item"><span class="swatch" style="background:' + s.color + '"></span>' + esc(s.name) + '</span>'; }).join('') + '</div>';
+      }
+
+      function lineChart(seriesList) {
+        var all = [];
+        seriesList.forEach(function (series) { series.points.forEach(function (p, i) { all.push({ x: i, y: p.value }); }); });
+        var maxLen = Math.max.apply(null, seriesList.map(function (s) { return s.points.length; }));
+        var minY = Math.min.apply(null, all.map(function (p) { return p.y; }).concat([0]));
+        var maxY = Math.max.apply(null, all.map(function (p) { return p.y; }).concat([0]));
+        if (minY === maxY) { minY -= 1; maxY += 1; }
+        var pad = 34, w = 720, h = 250, innerW = w - pad * 2, innerH = h - pad * 2;
+        function x(i) { return pad + (maxLen <= 1 ? 0 : i / (maxLen - 1) * innerW); }
+        function y(v) { return pad + (maxY - v) / (maxY - minY) * innerH; }
+        var zeroY = y(0);
+        var paths = seriesList.map(function (series) {
+          var d = series.points.map(function (p, i) { return (i ? 'L' : 'M') + x(i).toFixed(2) + ' ' + y(p.value).toFixed(2); }).join(' ');
+          return '<path d="' + d + '" fill="none" stroke="' + series.color + '" stroke-width="2"></path>';
+        }).join('');
+        return '<svg viewBox="0 0 ' + w + ' ' + h + '" role="img" aria-label="Cumulative return chart">' +
+          '<line x1="' + pad + '" x2="' + (w - pad) + '" y1="' + zeroY.toFixed(2) + '" y2="' + zeroY.toFixed(2) + '" stroke="#c9c1ad" stroke-width="1"></line>' +
+          '<text x="' + pad + '" y="18" fill="#5a5550" font-size="11">' + esc(fmtPct(maxY)) + '</text>' +
+          '<text x="' + pad + '" y="' + (h - 8) + '" fill="#5a5550" font-size="11">' + esc(fmtPct(minY)) + '</text>' +
+          paths +
+        '</svg>';
+      }
+
+      function renderContributors(metrics) {
+        if (metrics.scenario.status === "draft") return '<div class="empty">Contributors appear after the scenario is locked.</div>';
+        var rows = metrics.positions.filter(function (m) { return m.active && m.returnPct != null; }).sort(function (a, b) { return b.contribution - a.contribution; });
+        var winners = rows.slice(0, 3);
+        var losers = rows.slice().reverse().slice(0, 3);
+        return '<div class="split-list"><div><h3>Top contributors</h3>' + miniList(winners) + '</div><div><h3>Top detractors</h3>' + miniList(losers) + '</div></div>';
+      }
+
+      function miniList(rows) {
+        if (!rows.length) return '<div class="empty">No priced positions.</div>';
+        return '<div class="mini-list">' + rows.map(function (m) {
+          return '<div class="mini-row"><span class="mono">' + esc(m.position.symbol) + '</span><span class="name">' + esc(m.position.name) + '</span><span class="num">' + delta(m.contribution) + '</span></div>';
+        }).join('') + '</div>';
+      }
+
+      function renderTargetDrift(scenario) {
+        var byTheme = exposureBy("theme", scenario);
+        var keys = unique(Object.keys(scenario.themeTargets).concat(Object.keys(byTheme))).filter(Boolean);
+        return '<div class="drift-list">' +
+          '<div class="drift-head"><div>Theme</div><div>Weight / target</div><div class="drift-num">Weight</div><div class="drift-num">Target</div><div class="drift-num">Gap</div></div>' +
+          keys.map(function (theme, index) {
+            var weight = byTheme[theme] || 0;
+            var target = number(scenario.themeTargets[theme]);
+            var scale = Math.max(100, weight, target);
+            var fill = Math.max(0, Math.min(100, weight / scale * 100));
+            var marker = Math.max(0, Math.min(100, target / scale * 100));
+            return '<div class="drift-row">' +
+              '<div class="drift-name">' + esc(theme) + '</div>' +
+              '<div class="drift-rail"><div class="drift-fill" style="width:' + fill.toFixed(2) + '%;background:' + colorFor(theme, index) + '"></div><span class="drift-marker" style="left:' + marker.toFixed(2) + '%"></span></div>' +
+              '<div class="drift-num">' + fmtPct(weight) + '</div>' +
+              '<div class="drift-num">' + fmtPct(target) + '</div>' +
+              '<div class="drift-num">' + delta(weight - target) + '</div>' +
+            '</div>';
+          }).join('') +
+        '</div>';
+      }
+
+      function renderWarnings(warnings) {
+        return '<div class="warning-list">' + warnings.map(function (w) {
+          return '<div class="warning ' + escAttr(w[0]) + '"><div class="tag">' + esc(w[1]) + '</div><div>' + esc(w[2]) + '</div></div>';
+        }).join('') + '</div>';
+      }
+
+      function renderScenarios() {
+        var ranked = store.scenarios.map(function (s) { return computeScenario(s); }).sort(function (a, b) {
+          return number(b.cumulativeReturn) - number(a.cumulativeReturn);
+        });
+        return '' +
+          '<section class="section">' +
+            '<div class="section-head"><h2>Scenario lab</h2><div class="toolbar"><button class="btn primary" data-action="new-scenario">New draft</button><button class="btn subtle" data-action="refresh-quotes"' + (quoteBusy ? ' disabled' : '') + '>Refresh quotes</button></div></div>' +
+            '<div class="scenario-list">' + store.scenarios.map(renderScenarioItem).join('') + '</div>' +
+          '</section>' +
+          '<section class="section grid-2">' +
+            '<div class="panel"><div class="section-head"><h2>Leaderboard</h2></div>' + renderLeaderboard(ranked) + '</div>' +
+            '<div class="panel"><div class="section-head"><h2>Compare scenarios</h2><div class="toolbar"><span class="muted">select up to four</span></div></div>' + renderCompare() + '</div>' +
+          '</section>';
+      }
+
+      function renderScenarioItem(scenario) {
+        var m = computeScenario(scenario);
+        var active = scenario.id === store.activeScenarioId;
+        return '<div class="scenario-item ' + (active ? 'active' : '') + '">' +
+          '<div><div class="scenario-name">' + esc(scenario.name) + ' ' + statusBadge(scenario.status) + '</div><div class="scenario-meta">' + esc(scenario.status === "draft" ? "not locked" : "inception " + dateDisplay(scenario.lockedAt)) + ' | ' + m.activeCount + ' active names</div></div>' +
+          '<div class="scenario-stats">' +
+            '<span><strong>' + (m.cumulativeReturn == null ? '-' : signedPct(m.cumulativeReturn)) + '</strong>cumulative</span>' +
+            '<span><strong>' + (m.maxDrawdown == null ? '-' : '-' + fmtPct(m.maxDrawdown)) + '</strong>drawdown</span>' +
+            '<span><strong>' + (scenario.lockedAt ? m.days : '-') + '</strong>days</span>' +
+            '<span><strong>' + fmtPct(m.coveragePct) + '</strong>coverage</span>' +
+          '</div>' +
+          '<div class="toolbar">' + scenarioActions(scenario, true) + '</div>' +
+        '</div>';
+      }
+
+      function scenarioActions(scenario, compact) {
+        var buttons = [];
+        if (scenario.id !== store.activeScenarioId) buttons.push('<button class="btn subtle tiny" data-action="activate-scenario" data-id="' + scenario.id + '">Activate</button>');
+        if (scenario.status === "draft") buttons.push('<button class="btn primary tiny" data-action="open-lock-modal" data-id="' + scenario.id + '">Lock</button>');
+        if (scenario.status !== "draft") buttons.push('<button class="btn subtle tiny" data-action="fork-scenario" data-id="' + scenario.id + '">Fork</button>');
+        if (scenario.status === "tracking") buttons.push('<button class="btn subtle tiny" data-action="close-scenario" data-id="' + scenario.id + '">Close</button>');
+        if (scenario.status === "closed") buttons.push('<button class="btn subtle tiny" data-action="reopen-scenario" data-id="' + scenario.id + '">Reopen</button>');
+        buttons.push('<button class="btn subtle tiny" data-action="edit-scenario" data-id="' + scenario.id + '">Edit</button>');
+        if (store.scenarios.length > 1 || compact) buttons.push('<button class="btn danger tiny" data-action="delete-scenario" data-id="' + scenario.id + '">Delete</button>');
+        return buttons.join('');
+      }
+
+      function renderLeaderboard(ranked) {
+        var rows = ranked.filter(function (m) { return m.scenario.status !== "draft"; }).map(function (m, i) {
+          return '<tr><td class="num">' + (i + 1) + '</td><td>' + esc(m.scenario.name) + '</td><td>' + statusBadge(m.scenario.status) + '</td><td class="num">' + signedPct(m.cumulativeReturn) + '</td><td class="num">' + (m.spyReturn == null ? '-' : signedPct(m.cumulativeReturn - m.spyReturn)) + '</td></tr>';
+        }).join('');
+        return rows ? table(["#", "Scenario", "Status", "Return", "vs SPY"], rows, [true, false, false, true, true], "compact") : '<div class="empty">Lock a scenario to start the leaderboard.</div>';
+      }
+
+      function renderCompare() {
+        var options = store.scenarios.filter(function (s) { return s.status !== "draft"; });
+        if (!options.length) return '<div class="empty">Tracking or closed scenarios can be compared here.</div>';
+        if (!compareIds.length) compareIds = options.slice(0, Math.min(2, options.length)).map(function (s) { return s.id; });
+        var checks = '<div class="toolbar" style="margin-bottom:12px;">' + options.map(function (s) {
+          return '<label class="muted"><input type="checkbox" data-compare-id="' + s.id + '"' + (compareIds.indexOf(s.id) >= 0 ? ' checked' : '') + '> ' + esc(s.name) + '</label>';
+        }).join('') + '</div>';
+        var seriesList = compareIds.slice(0, 4).map(function (id, index) {
+          var s = store.scenarios.find(function (x) { return x.id === id; });
+          if (!s) return null;
+          return { name: s.name, points: scenarioSeries(s), color: colors[index % colors.length] };
+        }).filter(function (s) { return s && s.points.length; });
+        return checks + (seriesList.length ? '<div class="chart-wrap">' + lineChart(seriesList) + '</div><div class="legend">' + seriesList.map(function (s) { return '<span class="legend-item"><span class="swatch" style="background:' + s.color + '"></span>' + esc(s.name) + '</span>'; }).join('') + '</div>' : '<div class="empty">Selected scenarios do not have snapshots yet.</div>');
+      }
+
+      function renderPositions(scenario, metrics) {
+        var sorted = metrics.positions.slice().sort(function (a, b) {
+          if (scenario.status === "draft") return number(b.position.weight) - number(a.position.weight);
+          return number(b.contribution) - number(a.contribution);
+        });
+        var rows = sorted.map(function (m) {
+          var p = m.position;
+          var removed = p.removedAt ? ' class="removed"' : '';
+          return '<tr' + removed + '>' +
+            '<td><input class="cell mono" data-edit-position="' + escAttr(p.symbol) + '" data-field="symbol" value="' + escAttr(p.symbol) + '"></td>' +
+            '<td><input class="cell" data-edit-position="' + escAttr(p.symbol) + '" data-field="name" value="' + escAttr(p.name) + '"></td>' +
+            '<td><input class="cell" data-edit-position="' + escAttr(p.symbol) + '" data-field="theme" value="' + escAttr(p.theme) + '"></td>' +
+            '<td><input class="cell" data-edit-position="' + escAttr(p.symbol) + '" data-field="category" value="' + escAttr(p.category) + '"></td>' +
+            '<td>' + selectCell(p.symbol, "tier", tiers, p.tier) + '</td>' +
+            '<td class="num"><input class="cell num" type="number" step="0.01" data-edit-position="' + escAttr(p.symbol) + '" data-field="weight" value="' + attrNum(p.weight) + '"></td>' +
+            '<td class="num">' + priceCell(m.inceptionPrice) + '</td>' +
+            '<td class="num">' + priceCell(m.currentPrice) + '</td>' +
+            '<td class="num">' + (m.returnPct == null ? '-' : delta(m.returnPct)) + '</td>' +
+            '<td class="num">' + (scenario.status === "draft" ? '-' : delta(m.contribution)) + '</td>' +
+            '<td>' + (p.removedAt ? '<span class="muted">removed ' + dateDisplay(p.removedAt) + '</span>' : '<button class="btn icon danger" data-action="remove-position" data-id="' + escAttr(p.symbol) + '">x</button>') + '</td>' +
+          '</tr>';
+        }).join('');
+        return '<section class="section">' +
+          '<div class="section-head"><h2>Positions</h2><div class="toolbar"><button class="btn primary" data-action="add-position">Add position</button><button class="btn subtle" data-action="refresh-quotes"' + (quoteBusy ? ' disabled' : '') + '>Refresh quotes</button></div></div>' +
+          table(["Ticker", "Name", "Theme", "Category", "Tier", "Weight", "Inception", "Current", "Return", "Contribution", ""], rows, [false, false, false, false, false, true, true, true, true, true, false]) +
+        '</section>';
+      }
+
+      function renderQuotes(scenario, metrics) {
+        var symbols = quoteUniverse().sort();
+        var rows = symbols.map(function (symbol) {
+          var q = store.settings.quoteCache[symbol];
+          return '<tr><td><span class="mono">' + esc(symbol) + '</span></td><td class="num">' + (q ? priceCell(q.price) : '-') + '</td><td>' + esc(q && q.source ? q.source : '-') + '</td><td>' + esc(q && q.asOf ? dateTimeDisplay(q.asOf) : '-') + '</td></tr>';
+        }).join('');
+        return '<section class="section grid-2">' +
+          '<div class="panel"><div class="section-head"><h2>Quotes & data</h2><div class="toolbar"><button class="btn primary" data-action="refresh-quotes"' + (quoteBusy ? ' disabled' : '') + '>Refresh quotes</button></div></div>' +
+            '<div class="form-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));">' +
+              '<label class="field">Provider<select data-edit-setting="provider">' + Object.keys(providers).map(function (key) { return '<option value="' + key + '"' + (store.settings.provider === key ? ' selected' : '') + '>' + providers[key] + '</option>'; }).join('') + '</select></label>' +
+              '<label class="field">API key<input type="password" data-edit-setting="apiKey" value="' + escAttr(store.settings.apiKey || '') + '" placeholder="Only needed for paid/free API providers"></label>' +
+            '</div>' +
+            '<p class="muted" style="margin-bottom:0;">' + esc(quoteMessage) + '</p>' +
+          '</div>' +
+          '<div class="panel"><div class="section-head"><h2>Factory reset</h2></div><p class="muted">Wipes localStorage for this tool. Export JSON first if you want to restore scenarios later.</p><button class="btn danger" data-action="open-reset-modal">Reset to factory defaults</button></div>' +
+          '</section>' +
+          '<section class="section"><div class="section-head"><h2>Quote cache</h2></div>' + table(["Symbol", "Price", "Source", "As of"], rows, [false, true, false, false], "compact") + '</section>';
+      }
+
+      function renderExport(scenario, metrics) {
+        return '<section class="section grid-2">' +
+          '<div class="panel"><div class="section-head"><h2>Export</h2></div><div class="toolbar"><button class="btn primary" data-action="export-scenario">Export active scenario</button><button class="btn" data-action="export-all">Export all scenarios</button><button class="btn subtle" data-action="export-memo">Export memo</button></div></div>' +
+          '<div class="panel"><div class="section-head"><h2>Import</h2></div><div class="toolbar"><button class="btn" data-action="import-json">Import JSON</button><input id="importFile" class="hidden" type="file" accept="application/json,.json"></div></div>' +
+          '</section>' +
+          '<section class="section"><div class="section-head"><h2>Active scenario backup preview</h2></div><div class="panel"><pre style="white-space:pre-wrap;margin:0;font-size:12px;max-height:360px;overflow:auto;">' + esc(JSON.stringify(scenario, null, 2)) + '</pre></div></section>';
+      }
+
+      function table(headers, rows, numeric, variant) {
+        var cls = variant ? ' ' + variant : '';
+        return '<div class="table-wrap' + cls + '"><table class="' + (variant || '') + '"><thead><tr>' + headers.map(function (h, i) {
+          return '<th class="' + (numeric && numeric[i] ? 'num' : '') + '">' + esc(h) + '</th>';
+        }).join('') + '</tr></thead><tbody>' + (rows || '') + '</tbody></table></div>';
+      }
+
+      function selectCell(symbol, field, options, value) {
+        return '<select class="cell" data-edit-position="' + escAttr(symbol) + '" data-field="' + escAttr(field) + '">' + options.map(function (opt) {
+          return '<option value="' + escAttr(opt) + '"' + (opt === value ? ' selected' : '') + '>' + esc(opt) + '</option>';
+        }).join('') + '</select>';
+      }
+
+      function renderModal() {
+        if (migrationProblem) {
+          return '<div class="modal-backdrop"><div class="modal"><h2>Storage migration needed</h2><p>' + esc(migrationProblem.message) + '</p><p>Export the raw localStorage backup before resetting if you want to inspect or recover it manually.</p><div class="toolbar"><button class="btn primary" data-action="export-raw-migration">Export raw backup</button><button class="btn danger" data-action="confirm-reset">Reset local data</button></div></div></div>';
+        }
+        if (!store.settings.onboardingDismissed) {
+          return '<div class="modal-backdrop"><div class="modal"><h2>Run this like a thesis experiment</h2><p>A thesis sandbox. Set your weights, lock in a baseline, come back to see how your bet did.</p><div class="modal-cards"><div class="modal-card"><strong>1. Adjust weights</strong><span class="muted">Use percentages of a hypothetical 100% allocation.</span></div><div class="modal-card"><strong>2. Lock baseline</strong><span class="muted">Capture current prices for every active ticker.</span></div><div class="modal-card"><strong>3. Revisit</strong><span class="muted">Snapshots build a return curve over time.</span></div></div><div class="toolbar"><button class="btn primary" data-action="dismiss-onboarding">Start experimenting</button></div></div></div>';
+        }
+        if (!modal) return '';
+        if (modal.type === "lock") {
+          return '<div class="modal-backdrop"><div class="modal"><h2>Lock scenario</h2><p>Capture prices as of ' + esc(dateTimeDisplay(new Date().toISOString())) + ' and start tracking this allocation? You can fork it later to test variants.</p><div class="toolbar"><button class="btn primary" data-action="confirm-lock" data-id="' + escAttr(modal.id) + '">Lock scenario</button><button class="btn subtle" data-action="close-modal">Cancel</button></div></div></div>';
+        }
+        if (modal.type === "reset") {
+          return '<div class="modal-backdrop"><div class="modal"><h2>Reset to factory defaults</h2><p>This wipes localStorage for the thesis sandbox. Exported JSON can be re-imported later.</p><div class="toolbar"><button class="btn danger" data-action="confirm-reset">Reset everything</button><button class="btn subtle" data-action="close-modal">Cancel</button></div></div></div>';
+        }
+        return '';
+      }
+
+      document.addEventListener("click", function (event) {
+        var tab = event.target.closest("[data-tab]");
+        if (tab) { activeTab = tab.getAttribute("data-tab"); render(); return; }
+        var actionEl = event.target.closest("[data-action]");
+        if (!actionEl) return;
+        var action = actionEl.getAttribute("data-action");
+        var id = actionEl.getAttribute("data-id");
+        if (action === "dismiss-onboarding") { store.settings.onboardingDismissed = true; saveStore(); render(); }
+        if (action === "close-modal") { modal = null; render(); }
+        if (action === "open-lock-modal") openLockModal(id || currentScenario().id);
+        if (action === "confirm-lock") lockScenario(id);
+        if (action === "activate-scenario") { store.activeScenarioId = id; activeTab = "dashboard"; saveStore(); render(); }
+        if (action === "edit-scenario") { store.activeScenarioId = id; activeTab = "positions"; saveStore(); render(); }
+        if (action === "fork-scenario") forkScenario(id);
+        if (action === "close-scenario") closeScenario(id);
+        if (action === "reopen-scenario") reopenScenario(id);
+        if (action === "delete-scenario") deleteScenario(id);
+        if (action === "new-scenario") newScenario();
+        if (action === "add-position") addPosition();
+        if (action === "remove-position") removePosition(id);
+        if (action === "refresh-quotes") refreshQuotes();
+        if (action === "open-reset-modal") { modal = { type: "reset" }; render(); }
+        if (action === "confirm-reset") resetFactory();
+        if (action === "export-scenario") exportScenario();
+        if (action === "export-all") exportAll();
+        if (action === "export-memo") exportMemo();
+        if (action === "export-raw-migration") exportRawMigration();
+        if (action === "import-json") document.getElementById("importFile").click();
+      });
+
+      document.addEventListener("change", function (event) {
+        var target = event.target;
+        if (target.matches("[data-edit-scenario-name]")) editScenarioName(target.value);
+        if (target.matches("[data-edit-position]")) editPosition(target);
+        if (target.matches("[data-edit-setting]")) editSetting(target);
+        if (target.matches("[data-compare-id]")) toggleCompare(target);
+        if (target.id === "importFile" && target.files && target.files[0]) importJson(target.files[0]);
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" && event.target.matches("input")) event.target.blur();
+      });
+
+      function openLockModal(id) {
+        var scenario = store.scenarios.find(function (s) { return s.id === id; });
+        var missing = missingLockPrices(scenario);
+        if (missing.length) {
+          alert(missing.length + " active position(s) have no price: " + missing.join(", ") + ". Resolve or remove before locking.");
+          return;
+        }
+        modal = { type: "lock", id: id };
+        render();
+      }
+
+      function lockScenario(id) {
+        var now = new Date().toISOString();
+        replaceScenario(id, function (scenario) {
+          scenario.status = "tracking";
+          scenario.lockedAt = now;
+          scenario.closedAt = null;
+          scenario.positions = scenario.positions.map(function (p) {
+            if (number(p.weight) > 0 && !p.removedAt) {
+              p.inceptionPrice = currentPrice(p.symbol, scenario);
+              p.inceptionDate = now;
+            }
+            return p;
+          });
+          scenario.snapshots = [snapshotForScenario(scenario, now)];
+          return scenario;
+        });
+        modal = null;
+        store.activeScenarioId = id;
+        activeTab = "dashboard";
+        saveStore();
+        render();
+      }
+
+      function missingLockPrices(scenario) {
+        return activePositions(scenario).filter(function (p) { return currentPrice(p.symbol, scenario) <= 0; }).map(function (p) { return p.symbol; });
+      }
+
+      function forkScenario(id, patch) {
+        var source = store.scenarios.find(function (s) { return s.id === id; });
+        if (!source) return;
+        var now = new Date().toISOString();
+        var copy = clone(source);
+        copy.id = uid("scn");
+        copy.name = source.name + " fork";
+        copy.createdAt = now;
+        copy.lockedAt = null;
+        copy.closedAt = null;
+        copy.status = "draft";
+        copy.snapshots = [];
+        copy.positions = copy.positions.filter(function (p) { return !p.removedAt; }).map(function (p) {
+          p.inceptionPrice = null;
+          p.inceptionDate = null;
+          delete p.removedAt;
+          delete p.removedContribution;
+          return p;
+        });
+        if (patch) copy = patch(copy);
+        store.scenarios.push(copy);
+        store.activeScenarioId = copy.id;
+        activeTab = "positions";
+        saveStore();
+        render();
+      }
+
+      function closeScenario(id) {
+        if (!confirm("Close this scenario and freeze its return stream?")) return;
+        replaceScenario(id, function (scenario) {
+          if (scenario.status === "tracking") {
+            var now = new Date().toISOString();
+            scenario.snapshots = upsertSnapshot(scenario, snapshotForScenario(scenario, now));
+            scenario.status = "closed";
+            scenario.closedAt = now;
+          }
+          return scenario;
+        });
+        render();
+      }
+
+      function reopenScenario(id) {
+        replaceScenario(id, function (scenario) {
+          if (scenario.status === "closed") {
+            scenario.status = "tracking";
+            scenario.closedAt = null;
+          }
+          return scenario;
+        });
+        render();
+      }
+
+      function deleteScenario(id) {
+        if (store.scenarios.length <= 1) {
+          alert("Keep at least one scenario. Use reset for a clean sheet.");
+          return;
+        }
+        var scenario = store.scenarios.find(function (s) { return s.id === id; });
+        if (!scenario || !confirm("Delete " + scenario.name + "?")) return;
+        store.scenarios = store.scenarios.filter(function (s) { return s.id !== id; });
+        if (store.activeScenarioId === id) store.activeScenarioId = store.scenarios[0].id;
+        compareIds = compareIds.filter(function (x) { return x !== id; });
+        saveStore();
+        render();
+      }
+
+      function newScenario() {
+        forkScenario(currentScenario().id, function (copy) {
+          copy.name = "New Draft";
+          return copy;
+        });
+      }
+
+      function addPosition() {
+        var scenario = currentScenario();
+        var symbol = cleanSymbol(prompt("Ticker symbol to add:", "NEW") || "");
+        if (!symbol) return;
+        if (scenario.status === "tracking" && currentPrice(symbol, scenario) <= 0) {
+          alert(symbol + " has no current price. Refresh quotes or add it as a draft fork.");
+          return;
+        }
+        replaceScenario(scenario.id, function (s) {
+          if (s.positions.some(function (p) { return p.symbol === symbol && !p.removedAt; })) return s;
+          var p = pos(symbol, symbol, "Compute", "", "Satellite", 0);
+          if (s.status === "tracking") {
+            p.inceptionPrice = currentPrice(symbol, s);
+            p.inceptionDate = new Date().toISOString();
+          }
+          s.positions.push(p);
+          return s;
+        });
+        activeTab = "positions";
+        render();
+      }
+
+      function removePosition(symbol) {
+        var scenario = currentScenario();
+        if (!confirm("Remove " + symbol + " from this scenario?")) return;
+        replaceScenario(scenario.id, function (s) {
+          s.positions = s.positions.map(function (p) {
+            if (p.symbol !== symbol || p.removedAt) return p;
+            if (s.status === "tracking") {
+              var m = computeScenario(s).positions.find(function (x) { return x.position.symbol === symbol; });
+              p.removedContribution = m ? m.contribution : 0;
+              p.removedAt = new Date().toISOString();
+              p.weight = 0;
+            } else {
+              p.removedAt = new Date().toISOString();
+              p.weight = 0;
+            }
+            return p;
+          });
+          return s;
+        });
+        render();
+      }
+
+      function editScenarioName(name) {
+        var scenario = currentScenario();
+        if (scenario.status !== "draft") return;
+        replaceScenario(scenario.id, function (s) { s.name = name.trim() || s.name; return s; });
+        render();
+      }
+
+      function editPosition(input) {
+        var symbol = input.getAttribute("data-edit-position");
+        var field = input.getAttribute("data-field");
+        var value = input.value;
+        if (["weight", "inceptionPrice"].indexOf(field) >= 0) value = number(value);
+        if (field === "symbol") value = cleanSymbol(value);
+        var scenario = currentScenario();
+        if (scenario.status === "tracking" && field === "weight") {
+          var fork = confirm("This scenario is tracking from " + dateDisplay(scenario.lockedAt) + ". Press OK to fork into a new draft (recommended), or Cancel to edit in place.");
+          if (fork) {
+            forkScenario(scenario.id, function (copy) {
+              copy.positions = copy.positions.map(function (p) { if (p.symbol === symbol) p.weight = value; return p; });
+              return copy;
+            });
+            return;
+          }
+        }
+        replaceScenario(scenario.id, function (s) {
+          if (s.status === "tracking" && field === "weight") {
+            s.snapshots = s.snapshots.map(function (snap) {
+              if (snap.weights) return snap;
+              snap.weights = scenarioWeights(s);
+              return snap;
+            });
+          }
+          s.positions = s.positions.map(function (p) {
+            if (p.symbol !== symbol) return p;
+            p[field] = field === "tier" ? validTier(value) : value;
+            if (s.status === "tracking" && number(p.weight) > 0 && !p.inceptionPrice) {
+              p.inceptionPrice = currentPrice(p.symbol, s);
+              p.inceptionDate = new Date().toISOString();
+            }
+            return p;
+          });
+          if (s.status === "tracking" && field === "weight") s.snapshots = upsertSnapshot(s, snapshotForScenario(s, new Date().toISOString()));
+          return s;
+        });
+        render();
+      }
+
+      function editSetting(input) {
+        var field = input.getAttribute("data-edit-setting");
+        store.settings[field] = input.value;
+        saveStore();
+        render();
+      }
+
+      function toggleCompare(input) {
+        var id = input.getAttribute("data-compare-id");
+        if (input.checked) {
+          if (compareIds.length >= 4) {
+            input.checked = false;
+            alert("Compare up to four scenarios.");
+            return;
+          }
+          if (compareIds.indexOf(id) < 0) compareIds.push(id);
+        } else {
+          compareIds = compareIds.filter(function (x) { return x !== id; });
+        }
+        render();
+      }
+
+      async function refreshQuotes() {
+        if (quoteBusy) return;
+        var symbols = quoteUniverse();
+        if (!symbols.length) return;
+        if (store.settings.provider !== "stooq" && !store.settings.apiKey) {
+          quoteMessage = providers[store.settings.provider] + " needs an API key.";
+          render();
+          return;
+        }
+        quoteBusy = true;
+        quoteMessage = "Refreshing " + symbols.length + " quote" + (symbols.length === 1 ? "" : "s") + "...";
+        render();
+        var ok = 0;
+        var failed = [];
+        for (var i = 0; i < symbols.length; i += 1) {
+          var symbol = symbols[i];
+          try {
+            var quote = await fetchQuote(symbol);
+            if (quote && number(quote.price) > 0) {
+              store.settings.quoteCache[symbol] = quote;
+              ok += 1;
+            } else {
+              failed.push(symbol);
+            }
+          } catch (err) {
+            failed.push(symbol);
+          }
+        }
+        if (ok) store.settings.lastQuoteRefresh = new Date().toISOString();
+        appendTrackingSnapshots();
+        quoteBusy = false;
+        quoteMessage = ok + " quote" + (ok === 1 ? "" : "s") + " refreshed" + (failed.length ? "; " + failed.length + " failed" : ".");
+        saveStore();
+        render();
+      }
+
+      function quoteUniverse() {
+        var symbols = {};
+        store.scenarios.forEach(function (s) {
+          s.positions.forEach(function (p) {
+            if (!p.removedAt && number(p.weight) > 0) symbols[p.symbol] = true;
+          });
+          if (s.status !== "draft") symbols[BENCHMARK_SYMBOL] = true;
+        });
+        return Object.keys(symbols);
+      }
+
+      async function fetchQuote(symbol) {
+        if (store.settings.provider === "finnhub") return fetchFinnhub(symbol);
+        if (store.settings.provider === "alphaVantage") return fetchAlphaVantage(symbol);
+        return fetchStooq(symbol);
+      }
+
+      async function fetchStooq(symbol) {
+        var url = "https://stooq.com/q/l/?s=" + encodeURIComponent(toStooqSymbol(symbol)) + "&f=sd2t2ohlcv&h&e=csv";
+        var text = await fetchText(url);
+        var rows = parseCsv(text);
+        if (rows.length < 2) throw new Error("empty response");
+        var record = {};
+        rows[0].forEach(function (h, i) { record[h] = rows[1][i]; });
+        var close = number(record.Close);
+        if (!close) throw new Error("no close");
+        return { price: close, asOf: safeAsOf(record.Date, record.Time), source: "Stooq" };
+      }
+
+      async function fetchFinnhub(symbol) {
+        var url = "https://finnhub.io/api/v1/quote?symbol=" + encodeURIComponent(symbol) + "&token=" + encodeURIComponent(store.settings.apiKey);
+        var data = await fetchJson(url);
+        if (!data || !number(data.c)) throw new Error("no price");
+        return { price: number(data.c), asOf: new Date((data.t || Date.now() / 1000) * 1000).toISOString(), source: "Finnhub" };
+      }
+
+      async function fetchAlphaVantage(symbol) {
+        var url = "https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=" + encodeURIComponent(symbol) + "&apikey=" + encodeURIComponent(store.settings.apiKey);
+        var data = await fetchJson(url);
+        var quote = data && data["Global Quote"];
+        if (!quote || !number(quote["05. price"])) throw new Error(data && data.Note ? "rate limited" : "no price");
+        return { price: number(quote["05. price"]), asOf: new Date().toISOString(), source: "Alpha Vantage" };
+      }
+
+      function appendTrackingSnapshots() {
+        var now = new Date().toISOString();
+        store.scenarios = store.scenarios.map(function (s) {
+          if (s.status !== "tracking") return s;
+          return Object.assign({}, s, { snapshots: upsertSnapshot(s, snapshotForScenario(s, now)) });
+        });
+      }
+
+      function snapshotForScenario(scenario, iso) {
+        var prices = {};
+        activePositions(scenario).forEach(function (p) {
+          var price = currentPrice(p.symbol, scenario);
+          if (price) prices[p.symbol] = price;
+        });
+        var spy = currentPrice(BENCHMARK_SYMBOL, scenario);
+        if (spy) prices[BENCHMARK_SYMBOL] = spy;
+        return { date: dateOnly(iso), prices: prices, weights: scenarioWeights(scenario) };
+      }
+
+      function upsertSnapshot(scenario, snapshot) {
+        var existing = scenario.snapshots.filter(function (s) { return s.date !== snapshot.date; });
+        existing.push(snapshot);
+        existing.sort(function (a, b) { return a.date.localeCompare(b.date); });
+        return existing.slice(-MAX_SNAPSHOTS);
+      }
+
+      function exportScenario() {
+        download(JSON.stringify(currentScenario(), null, 2), safeName(currentScenario().name) + ".json", "application/json");
+      }
+
+      function exportAll() {
+        download(JSON.stringify(store, null, 2), "ai-infra-tracker-backup.json", "application/json");
+      }
+
+      function exportMemo() {
+        var scenario = currentScenario();
+        var metrics = computeScenario(scenario);
+        var lines = [];
+        lines.push("# " + scenario.name);
+        lines.push("");
+        lines.push("Status: " + scenario.status);
+        lines.push("Cumulative return: " + (metrics.cumulativeReturn == null ? "-" : signedPct(metrics.cumulativeReturn)));
+        lines.push("Equal-weight benchmark: " + (metrics.equalReturn == null ? "-" : signedPct(metrics.equalReturn)));
+        lines.push("SPY benchmark: " + (metrics.spyReturn == null ? "-" : signedPct(metrics.spyReturn)));
+        lines.push("Coverage: " + fmtPct(metrics.coveragePct));
+        lines.push("");
+        lines.push("| Symbol | Weight | Inception | Current | Return | Contribution |");
+        lines.push("|---|---:|---:|---:|---:|---:|");
+        metrics.positions.filter(function (m) { return !m.position.removedAt; }).forEach(function (m) {
+          lines.push("| " + m.position.symbol + " | " + fmtPct(m.position.weight) + " | " + priceText(m.inceptionPrice) + " | " + priceText(m.currentPrice) + " | " + (m.returnPct == null ? "-" : signedPct(m.returnPct)) + " | " + signedPct(m.contribution) + " |");
+        });
+        download(lines.join("\n"), safeName(scenario.name) + "-memo.md", "text/markdown");
+      }
+
+      function importJson(file) {
+        var reader = new FileReader();
+        reader.onload = function () {
+          try {
+            var parsed = JSON.parse(reader.result);
+            if (parsed && parsed.schemaVersion === SCHEMA_VERSION && Array.isArray(parsed.scenarios)) {
+              store = normalizeStore(parsed);
+            } else if (parsed && parsed.id && Array.isArray(parsed.positions)) {
+              var scenario = normalizeScenario(parsed);
+              if (store.scenarios.some(function (s) { return s.id === scenario.id; })) scenario.id = uid("scn");
+              store.scenarios.push(scenario);
+              store.activeScenarioId = scenario.id;
+            } else {
+              throw new Error("Unsupported JSON shape.");
+            }
+            saveStore();
+            render();
+          } catch (err) {
+            alert("Import failed: " + (err && err.message ? err.message : err));
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      function exportRawMigration() {
+        download(migrationProblem ? migrationProblem.raw || "" : "", "ai-infra-tracker-raw-localstorage.json", "application/json");
+      }
+
+      function resetFactory() {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(OLD_STORAGE_KEY);
+        store = seedStore();
+        migrationProblem = null;
+        modal = null;
+        activeTab = "scenarios";
+        saveStore();
+        render();
+      }
+
+      function download(content, filename, type) {
+        var blob = new Blob([content], { type: type });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function () {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 0);
+      }
+
+      async function fetchText(url) {
+        var response = await fetch(url, { cache: "no-store" });
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        return response.text();
+      }
+
+      async function fetchJson(url) {
+        var response = await fetch(url, { cache: "no-store" });
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        return response.json();
+      }
+
+      function parseCsv(text) {
+        return String(text || "").trim().split(/\r?\n/).map(function (line) {
+          var out = [], cur = "", quoted = false;
+          for (var i = 0; i < line.length; i += 1) {
+            var ch = line[i];
+            if (ch === '"' && line[i + 1] === '"') { cur += '"'; i += 1; }
+            else if (ch === '"') quoted = !quoted;
+            else if (ch === "," && !quoted) { out.push(cur); cur = ""; }
+            else cur += ch;
+          }
+          out.push(cur);
+          return out;
+        });
+      }
+
+      function toStooqSymbol(symbol) {
+        var s = String(symbol || "").trim().toLowerCase();
+        return s.indexOf(".") >= 0 ? s : s + ".us";
+      }
+
+      function safeAsOf(date, time) {
+        var now = new Date().toISOString();
+        if (!date || !time || date === "N/D" || time === "N/D") return now;
+        var parsed = new Date(date + "T" + time + "Z");
+        return Number.isNaN(parsed.getTime()) ? now : parsed.toISOString();
+      }
+
+      function statusBadge(status) {
+        return '<span class="badge ' + escAttr(status) + '">' + esc(status) + '</span>';
+      }
+
+      function priceCell(value) {
+        return number(value) > 0 ? priceText(value) : "-";
+      }
+
+      function priceText(value) {
+        return number(value) > 0 ? number(value).toFixed(number(value) >= 100 ? 2 : 3) : "-";
+      }
+
+      function delta(value) {
+        if (value == null || !Number.isFinite(Number(value))) return '-';
+        var n = number(value);
+        return '<span class="delta ' + (n >= 0 ? 'pos' : 'neg') + '">' + signedPct(n) + '</span>';
+      }
+
+      function fmtPct(value) {
+        return number(value).toFixed(1) + "%";
+      }
+
+      function signedPct(value) {
+        if (value == null || !Number.isFinite(Number(value))) return "-";
+        var n = number(value);
+        return (n > 0 ? "+" : "") + n.toFixed(2) + "%";
+      }
+
+      function draftCoverage(metrics) {
+        var priced = metrics.positions.filter(function (m) { return m.active && m.currentPrice > 0; }).length;
+        return metrics.activeCount ? fmtPct(priced / metrics.activeCount * 100) : "-";
+      }
+
+      function nullDiff(a, b) {
+        return a == null || b == null ? null : number(a) - number(b);
+      }
+
+      function number(value) {
+        if (value == null || value === "") return 0;
+        var n = Number(String(value).replace(/[$,%\s,]/g, ""));
+        return Number.isFinite(n) ? n : 0;
+      }
+
+      function sum(list) {
+        return list.reduce(function (acc, value) { return acc + number(value); }, 0);
+      }
+
+      function validTier(value) {
+        return tiers.indexOf(value) >= 0 ? value : "Satellite";
+      }
+
+      function cleanSymbol(value) {
+        return String(value || "").trim().toUpperCase();
+      }
+
+      function unique(list) {
+        var seen = {};
+        return list.filter(function (value) {
+          var key = String(value || "");
+          if (!key || seen[key]) return false;
+          seen[key] = true;
+          return true;
+        });
+      }
+
+      function uid(prefix) {
+        return prefix + "_" + Math.random().toString(36).slice(2, 10);
+      }
+
+      function attrNum(value) {
+        return escAttr(String(number(value)));
+      }
+
+      function colorFor(label, index) {
+        var hash = 0;
+        String(label).split("").forEach(function (ch) { hash = (hash * 31 + ch.charCodeAt(0)) >>> 0; });
+        return colors[(hash + index) % colors.length];
+      }
+
+      function daysBetween(start, end) {
+        var a = new Date(start), b = new Date(end);
+        if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return 0;
+        return Math.max(0, Math.floor((b - a) / 86400000));
+      }
+
+      function dateOnly(iso) {
+        return new Date(iso).toISOString().slice(0, 10);
+      }
+
+      function compareDateOnly(date, iso) {
+        return String(date).localeCompare(dateOnly(iso));
+      }
+
+      function dateDisplay(iso) {
+        if (!iso) return "-";
+        var d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return iso;
+        return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" }).format(d);
+      }
+
+      function dateTimeDisplay(iso) {
+        if (!iso) return "-";
+        var d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return iso;
+        return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(d);
+      }
+
+      function safeName(name) {
+        return String(name || "scenario").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "scenario";
+      }
+
+      function esc(value) {
+        return String(value == null ? "" : value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      }
+
+      function escAttr(value) {
+        return esc(value).replace(/"/g, "&quot;");
+      }
+
+      render();
+      setTimeout(function () {
+        if (!migrationProblem && store.settings.onboardingDismissed) refreshQuotes();
+      }, 600);
+    }());
+  </script>
+</body>
+</html>
