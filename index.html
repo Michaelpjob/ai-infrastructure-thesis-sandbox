@@ -1718,7 +1718,11 @@
       }
 
       async function fetchStooq(symbol) {
-        var url = "https://stooq.com/q/l/?s=" + encodeURIComponent(toStooqSymbol(symbol)) + "&f=sd2t2ohlcv&h&e=csv";
+        var stooqUrl = "https://stooq.com/q/l/?s=" + encodeURIComponent(toStooqSymbol(symbol)) + "&f=sd2t2ohlcv&h&e=csv";
+        // Stooq does not send CORS headers, so route through a public passthrough proxy when running on https.
+        var url = location.protocol === "https:"
+          ? "https://corsproxy.io/?url=" + encodeURIComponent(stooqUrl)
+          : stooqUrl;
         var text = await fetchText(url);
         var rows = parseCsv(text);
         if (rows.length < 2) throw new Error("empty response");
