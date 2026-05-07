@@ -328,7 +328,7 @@
 
     .chart-wrap {
       width: 100%;
-      min-height: 250px;
+      min-height: 320px;
       border-top: 1px solid var(--ink);
       border-bottom: 1px solid var(--ink);
       padding: 12px 0 6px;
@@ -337,7 +337,7 @@
     .chart-wrap svg {
       display: block;
       width: 100%;
-      height: 250px;
+      height: 320px;
     }
 
     .legend {
@@ -617,6 +617,7 @@
 
       var activeTab = "scenarios";
       var quoteBusy = false;
+      var backfillBusy = false;
       var quoteMessage = "Quotes use cached prices until refreshed.";
       var compareIds = [];
       var modal = null;
@@ -1183,32 +1184,98 @@
       }
 
       function lineChart(seriesList) {
-        var all = [];
-        seriesList.forEach(function (series) { series.points.forEach(function (p, i) { all.push({ x: i, y: p.value }); }); });
-        var maxLen = Math.max.apply(null, seriesList.map(function (s) { return s.points.length; }));
-        var minY = Math.min.apply(null, all.map(function (p) { return p.y; }).concat([0]));
-        var maxY = Math.max.apply(null, all.map(function (p) { return p.y; }).concat([0]));
+        var dateSet = {};
+        var allDates = [];
+        seriesList.forEach(function (series) {
+          series.points.forEach(function (p) {
+            if (p.date && !dateSet[p.date]) { dateSet[p.date] = true; allDates.push(p.date); }
+          });
+        });
+        allDates.sort();
+        var allValues = [0];
+        seriesList.forEach(function (series) { series.points.forEach(function (p) { allValues.push(p.value); }); });
+        var minY = Math.min.apply(null, allValues);
+        var maxY = Math.max.apply(null, allValues);
         if (minY === maxY) { minY -= 1; maxY += 1; }
-        var pad = 34, w = 720, h = 250, innerW = w - pad * 2, innerH = h - pad * 2;
-        function x(i) { return pad + (maxLen <= 1 ? innerW / 2 : i / (maxLen - 1) * innerW); }
-        function y(v) { return pad + (maxY - v) / (maxY - minY) * innerH; }
+        var range = maxY - minY;
+        minY -= range * 0.1;
+        maxY += range * 0.18;
+        var w = 720, h = 320;
+        var padL = 50, padR = 24, padT = 22, padB = 56;
+        var innerW = w - padL - padR, innerH = h - padT - padB;
+        var totalDates = Math.max(allDates.length, 2);
+        function xByIndex(i) { return padL + (totalDates <= 1 ? innerW / 2 : i / (totalDates - 1) * innerW); }
+        function xByDate(date) {
+          var idx = allDates.indexOf(date);
+          return xByIndex(idx >= 0 ? idx : 0);
+        }
+        function y(v) { return padT + (maxY - v) / (maxY - minY) * innerH; }
         var zeroY = y(0);
-        var marks = seriesList.map(function (series) {
-          if (series.points.length === 1) {
-            var only = series.points[0];
-            var startX = pad, endX = x(0), startY = y(0), endY = y(only.value);
-            return '<path d="M' + startX.toFixed(2) + ' ' + startY.toFixed(2) + ' L' + endX.toFixed(2) + ' ' + endY.toFixed(2) + '" fill="none" stroke="' + series.color + '" stroke-width="2"></path>' +
-              '<circle cx="' + endX.toFixed(2) + '" cy="' + endY.toFixed(2) + '" r="3.5" fill="' + series.color + '"></circle>';
+        var grid = "";
+        var yLabels = "";
+        var ticks = 4;
+        for (var g = 0; g <= ticks; g += 1) {
+          var v = minY + (maxY - minY) * g / ticks;
+          var yp = y(v);
+          grid += '<line x1="' + padL + '" x2="' + (w - padR) + '" y1="' + yp.toFixed(2) + '" y2="' + yp.toFixed(2) + '" stroke="#e8e2cf" stroke-width="1"></line>';
+          yLabels += '<text x="' + (padL - 6) + '" y="' + (yp + 3).toFixed(2) + '" fill="#5a5550" font-size="10" text-anchor="end">' + esc(signedPct(v)) + '</text>';
+        }
+        var zeroLine = '<line x1="' + padL + '" x2="' + (w - padR) + '" y1="' + zeroY.toFixed(2) + '" y2="' + zeroY.toFixed(2) + '" stroke="#c9c1ad" stroke-width="1.5"></line>';
+        var xLabels = allDates.map(function (date, i) {
+          var xp = xByIndex(i);
+          return '<text x="' + xp.toFixed(2) + '" y="' + (h - padB + 18) + '" fill="#5a5550" font-size="10" text-anchor="middle">' + esc(formatDateLabel(date)) + '</text>';
+        }).join('');
+        var marks = seriesList.map(function (series, sidx) {
+          var pts = series.points;
+          if (!pts.length) return '';
+          var line = '';
+          if (pts.length === 1) {
+            var p0 = pts[0];
+            var startX = xByIndex(0), endX = xByDate(p0.date);
+            line = '<path d="M' + startX.toFixed(2) + ' ' + y(0).toFixed(2) + ' L' + endX.toFixed(2) + ' ' + y(p0.value).toFixed(2) + '" fill="none" stroke="' + series.color + '" stroke-width="2"></path>';
+          } else {
+            var d = pts.map(function (p, i) { return (i ? 'L' : 'M') + xByDate(p.date).toFixed(2) + ' ' + y(p.value).toFixed(2); }).join(' ');
+            line = '<path d="' + d + '" fill="none" stroke="' + series.color + '" stroke-width="2"></path>';
           }
-          var d = series.points.map(function (p, i) { return (i ? 'L' : 'M') + x(i).toFixed(2) + ' ' + y(p.value).toFixed(2); }).join(' ');
-          return '<path d="' + d + '" fill="none" stroke="' + series.color + '" stroke-width="2"></path>';
+          var dots = pts.map(function (p) {
+            return '<circle cx="' + xByDate(p.date).toFixed(2) + '" cy="' + y(p.value).toFixed(2) + '" r="3" fill="' + series.color + '"></circle>';
+          }).join('');
+          var endLabel = "";
+          var lastPt = pts[pts.length - 1];
+          if (lastPt) {
+            var lx = xByDate(lastPt.date);
+            var ly = y(lastPt.value);
+            var lOff = lastPt.value >= 0 ? -8 : 16;
+            endLabel = '<text x="' + lx.toFixed(2) + '" y="' + (ly + lOff).toFixed(2) + '" fill="' + series.color + '" font-size="11" text-anchor="middle" font-weight="600">' + esc(signedPct(lastPt.value)) + '</text>';
+          }
+          var deltaLabels = "";
+          if (sidx === 0 && pts.length >= 2) {
+            for (var di = 1; di < pts.length; di += 1) {
+              var prev = pts[di - 1], curr = pts[di];
+              var delta = curr.value - prev.value;
+              var midX = (xByDate(prev.date) + xByDate(curr.date)) / 2;
+              var midY = (y(prev.value) + y(curr.value)) / 2;
+              var off = delta >= 0 ? -10 : 14;
+              deltaLabels += '<text x="' + midX.toFixed(2) + '" y="' + (midY + off).toFixed(2) + '" fill="#7a4a2d" font-size="9" text-anchor="middle" font-style="italic">' + esc((delta >= 0 ? '+' : '') + delta.toFixed(1) + '%') + '</text>';
+            }
+          }
+          return line + dots + deltaLabels + endLabel;
         }).join('');
         return '<svg viewBox="0 0 ' + w + ' ' + h + '" role="img" aria-label="Cumulative return chart">' +
-          '<line x1="' + pad + '" x2="' + (w - pad) + '" y1="' + zeroY.toFixed(2) + '" y2="' + zeroY.toFixed(2) + '" stroke="#c9c1ad" stroke-width="1"></line>' +
-          '<text x="' + pad + '" y="18" fill="#5a5550" font-size="11">' + esc(fmtPct(maxY)) + '</text>' +
-          '<text x="' + pad + '" y="' + (h - 8) + '" fill="#5a5550" font-size="11">' + esc(fmtPct(minY)) + '</text>' +
-          marks +
+          grid + zeroLine + yLabels + xLabels + marks +
         '</svg>';
+      }
+
+      function formatDateLabel(date) {
+        if (!date) return "";
+        var parts = date.split("-");
+        if (parts.length < 3) return date;
+        var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        var m = parseInt(parts[1], 10);
+        var d = parseInt(parts[2], 10);
+        var yy = parts[0].slice(2);
+        if (d >= 28) return months[m - 1] + " '" + yy;
+        return months[m - 1] + " " + d;
       }
 
       function renderContributors(metrics) {
@@ -1362,6 +1429,7 @@
           '</div>' +
           '<div class="panel"><div class="section-head"><h2>Factory reset</h2></div><p class="muted">Wipes localStorage for this tool. Export JSON first if you want to restore scenarios later.</p><button class="btn danger" data-action="open-reset-modal">Reset to factory defaults</button></div>' +
           '</section>' +
+          '<section class="section"><div class="panel"><div class="section-head"><h2>Historical backfill</h2><div class="toolbar"><button class="btn primary" data-action="backfill-history"' + (backfillBusy || quoteBusy ? ' disabled' : '') + '>Backfill quarterly history</button></div></div><p class="muted">Replaces inception with the close of the oldest quarter (default: 4 quarters back) and adds a snapshot at each quarter-end + today. Uses Alpha Vantage TIME_SERIES_MONTHLY_ADJUSTED with the API key above. Free-tier limit is 25 calls/day, throttled at one ticker every ~13 seconds. Provider stays on Stooq for ongoing live refreshes.</p></div></section>' +
           '<section class="section"><div class="section-head"><h2>Quote cache</h2></div>' + table(["Symbol", "Price", "Source", "As of"], rows, [false, true, false, false], "compact") + '</section>';
       }
 
@@ -1424,6 +1492,7 @@
         if (action === "add-position") addPosition();
         if (action === "remove-position") removePosition(id);
         if (action === "refresh-quotes") refreshQuotes();
+        if (action === "backfill-history") backfillHistory();
         if (action === "open-reset-modal") { modal = { type: "reset" }; render(); }
         if (action === "confirm-reset") resetFactory();
         if (action === "export-scenario") exportScenario();
@@ -1752,6 +1821,128 @@
         var quote = data && data["Global Quote"];
         if (!quote || !number(quote["05. price"])) throw new Error(data && data.Note ? "rate limited" : "no price");
         return { price: number(quote["05. price"]), asOf: new Date().toISOString(), source: "Alpha Vantage" };
+      }
+
+      function computeQuarterEnds(count) {
+        var now = new Date();
+        var qMonths = [2, 5, 8, 11];
+        var qDays = [31, 30, 30, 31];
+        var currentQ = Math.floor(now.getUTCMonth() / 3);
+        var year = now.getUTCFullYear();
+        var q = currentQ - 1;
+        if (q < 0) { q += 4; year -= 1; }
+        var ends = [];
+        for (var i = 0; i < count; i += 1) {
+          ends.unshift(year + "-" + String(qMonths[q] + 1).padStart(2, "0") + "-" + qDays[q]);
+          q -= 1;
+          if (q < 0) { q += 4; year -= 1; }
+        }
+        return ends;
+      }
+
+      async function backfillHistory() {
+        if (backfillBusy || quoteBusy) return;
+        if (!store.settings.apiKey) {
+          quoteMessage = "Alpha Vantage API key required for backfill (paste in API key field above).";
+          render();
+          return;
+        }
+        var symbols = quoteUniverse();
+        if (!symbols.length) return;
+        var quarterEnds = computeQuarterEnds(4);
+        var historicalPrices = {};
+        var failed = [];
+        var done = 0;
+        var stoppedByLimit = false;
+
+        backfillBusy = true;
+        render();
+
+        for (var i = 0; i < symbols.length; i += 1) {
+          var sym = symbols[i];
+          quoteMessage = "Backfill " + (i + 1) + "/" + symbols.length + ": fetching " + sym + " (~13s/ticker, AV free tier)...";
+          render();
+          try {
+            var url = "https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY_ADJUSTED&symbol=" + encodeURIComponent(sym) + "&apikey=" + encodeURIComponent(store.settings.apiKey);
+            var data = await fetchJson(url);
+            if (data && (data.Note || data.Information)) {
+              stoppedByLimit = true;
+              break;
+            }
+            var series = data && data["Monthly Adjusted Time Series"];
+            if (!series) {
+              failed.push(sym);
+            } else {
+              historicalPrices[sym] = {};
+              quarterEnds.forEach(function (qEnd) {
+                var ym = qEnd.substring(0, 7);
+                var match = Object.keys(series).find(function (k) { return k.substring(0, 7) === ym; });
+                if (match) {
+                  var close = number(series[match]["4. close"]) || number(series[match]["5. adjusted close"]);
+                  if (close) historicalPrices[sym][qEnd] = close;
+                }
+              });
+              done += 1;
+            }
+          } catch (err) {
+            failed.push(sym);
+          }
+          if (i < symbols.length - 1) {
+            await new Promise(function (resolve) { setTimeout(resolve, 13000); });
+          }
+        }
+
+        store.scenarios.forEach(function (scenario) {
+          if (scenario.status === "draft") return;
+          applyHistoricalSnapshots(scenario, quarterEnds, historicalPrices);
+        });
+
+        backfillBusy = false;
+        var remaining = symbols.length - i - (stoppedByLimit ? 0 : 1);
+        if (stoppedByLimit) {
+          quoteMessage = "AV daily limit reached after " + done + " ticker(s). " + (symbols.length - done) + " remaining — try again tomorrow.";
+        } else {
+          quoteMessage = "Backfilled " + done + " ticker" + (done === 1 ? "" : "s") + (failed.length ? "; " + failed.length + " failed" : ".");
+        }
+        saveStore();
+        render();
+      }
+
+      function applyHistoricalSnapshots(scenario, quarterEnds, historicalPrices) {
+        var oldestDate = quarterEnds[0];
+        var oldestIso = new Date(oldestDate + "T16:00:00Z").toISOString();
+        scenario.lockedAt = oldestIso;
+        scenario.positions.forEach(function (p) {
+          var hist = historicalPrices[p.symbol];
+          if (hist && hist[oldestDate]) {
+            p.inceptionPrice = hist[oldestDate];
+            p.inceptionDate = oldestIso;
+          }
+        });
+        var weights = scenarioWeights(scenario);
+        var snapshots = [];
+        quarterEnds.forEach(function (qEnd) {
+          var prices = {};
+          scenario.positions.forEach(function (p) {
+            var hist = historicalPrices[p.symbol];
+            if (hist && hist[qEnd]) prices[p.symbol] = hist[qEnd];
+          });
+          var spyHist = historicalPrices[BENCHMARK_SYMBOL];
+          if (spyHist && spyHist[qEnd]) prices[BENCHMARK_SYMBOL] = spyHist[qEnd];
+          snapshots.push({ date: qEnd, prices: prices, weights: weights });
+        });
+        var today = dateOnly(new Date().toISOString());
+        if (today > quarterEnds[quarterEnds.length - 1]) {
+          var todayPrices = {};
+          activePositions(scenario).forEach(function (p) {
+            var price = currentPrice(p.symbol, scenario);
+            if (price) todayPrices[p.symbol] = price;
+          });
+          var spyToday = currentPrice(BENCHMARK_SYMBOL, scenario);
+          if (spyToday) todayPrices[BENCHMARK_SYMBOL] = spyToday;
+          snapshots.push({ date: today, prices: todayPrices, weights: weights });
+        }
+        scenario.snapshots = snapshots;
       }
 
       function appendTrackingSnapshots() {
