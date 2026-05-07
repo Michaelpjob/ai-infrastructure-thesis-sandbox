@@ -1204,10 +1204,13 @@
         var padL = 50, padR = 24, padT = 22, padB = 56;
         var innerW = w - padL - padR, innerH = h - padT - padB;
         var totalDates = Math.max(allDates.length, 2);
+        var singleDate = allDates.length === 1;
         function xByIndex(i) { return padL + (totalDates <= 1 ? innerW / 2 : i / (totalDates - 1) * innerW); }
         function xByDate(date) {
           var idx = allDates.indexOf(date);
-          return xByIndex(idx >= 0 ? idx : 0);
+          if (idx < 0) return xByIndex(0);
+          if (singleDate) return xByIndex(totalDates - 1);
+          return xByIndex(idx);
         }
         function y(v) { return padT + (maxY - v) / (maxY - minY) * innerH; }
         var zeroY = y(0);
@@ -1222,9 +1225,12 @@
         }
         var zeroLine = '<line x1="' + padL + '" x2="' + (w - padR) + '" y1="' + zeroY.toFixed(2) + '" y2="' + zeroY.toFixed(2) + '" stroke="#c9c1ad" stroke-width="1.5"></line>';
         var xLabels = allDates.map(function (date, i) {
-          var xp = xByIndex(i);
+          var xp = singleDate ? xByIndex(totalDates - 1) : xByIndex(i);
           return '<text x="' + xp.toFixed(2) + '" y="' + (h - padB + 18) + '" fill="#5a5550" font-size="10" text-anchor="middle">' + esc(formatDateLabel(date)) + '</text>';
         }).join('');
+        if (singleDate) {
+          xLabels = '<text x="' + xByIndex(0).toFixed(2) + '" y="' + (h - padB + 18) + '" fill="#8a8578" font-size="10" text-anchor="middle" font-style="italic">inception</text>' + xLabels;
+        }
         var marks = seriesList.map(function (series, sidx) {
           var pts = series.points;
           if (!pts.length) return '';
