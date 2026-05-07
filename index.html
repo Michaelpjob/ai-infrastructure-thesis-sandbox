@@ -1190,10 +1190,14 @@
         var maxY = Math.max.apply(null, all.map(function (p) { return p.y; }).concat([0]));
         if (minY === maxY) { minY -= 1; maxY += 1; }
         var pad = 34, w = 720, h = 250, innerW = w - pad * 2, innerH = h - pad * 2;
-        function x(i) { return pad + (maxLen <= 1 ? 0 : i / (maxLen - 1) * innerW); }
+        function x(i) { return pad + (maxLen <= 1 ? innerW / 2 : i / (maxLen - 1) * innerW); }
         function y(v) { return pad + (maxY - v) / (maxY - minY) * innerH; }
         var zeroY = y(0);
-        var paths = seriesList.map(function (series) {
+        var marks = seriesList.map(function (series) {
+          if (series.points.length === 1) {
+            var only = series.points[0];
+            return '<circle cx="' + x(0).toFixed(2) + '" cy="' + y(only.value).toFixed(2) + '" r="4" fill="' + series.color + '"></circle>';
+          }
           var d = series.points.map(function (p, i) { return (i ? 'L' : 'M') + x(i).toFixed(2) + ' ' + y(p.value).toFixed(2); }).join(' ');
           return '<path d="' + d + '" fill="none" stroke="' + series.color + '" stroke-width="2"></path>';
         }).join('');
@@ -1201,7 +1205,7 @@
           '<line x1="' + pad + '" x2="' + (w - pad) + '" y1="' + zeroY.toFixed(2) + '" y2="' + zeroY.toFixed(2) + '" stroke="#c9c1ad" stroke-width="1"></line>' +
           '<text x="' + pad + '" y="18" fill="#5a5550" font-size="11">' + esc(fmtPct(maxY)) + '</text>' +
           '<text x="' + pad + '" y="' + (h - 8) + '" fill="#5a5550" font-size="11">' + esc(fmtPct(minY)) + '</text>' +
-          paths +
+          marks +
         '</svg>';
       }
 
@@ -1408,7 +1412,7 @@
         if (action === "close-modal") { modal = null; render(); }
         if (action === "open-lock-modal") openLockModal(id || currentScenario().id);
         if (action === "confirm-lock") lockScenario(id);
-        if (action === "activate-scenario") { store.activeScenarioId = id; activeTab = "dashboard"; saveStore(); render(); }
+        if (action === "activate-scenario") { store.activeScenarioId = id; saveStore(); render(); }
         if (action === "edit-scenario") { store.activeScenarioId = id; activeTab = "positions"; saveStore(); render(); }
         if (action === "fork-scenario") forkScenario(id);
         if (action === "close-scenario") closeScenario(id);
