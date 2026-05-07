@@ -830,7 +830,9 @@
           themeTargets: Object.assign({ Compute: 30, Power: 45, Edge: 25 }, s.themeTargets || {}),
           riskLimits: Object.assign({ maxSingle: 8, maxHighRiskBucket: 25, maxTheme: 50, maxHighRiskSingle: 3, maxWatchBucket: 5, minCoreBucket: 30 }, s.riskLimits || {}),
           snapshots: Array.isArray(s.snapshots) ? s.snapshots.slice(-MAX_SNAPSHOTS) : [],
-          notes: s.notes || ""
+          notes: s.notes || "",
+          inceptionBenchmarkPrice: number(s.inceptionBenchmarkPrice) || null,
+          inceptionBenchmarkDate: s.inceptionBenchmarkDate || null
         };
       }
 
@@ -1014,8 +1016,11 @@
 
       function benchmarkReturn(scenario) {
         if (scenario.status === "draft") return null;
-        var first = scenario.snapshots[0];
-        var start = first && first.prices ? number(first.prices[BENCHMARK_SYMBOL]) : 0;
+        var start = number(scenario.inceptionBenchmarkPrice);
+        if (!start) {
+          var first = scenario.snapshots[0];
+          start = first && first.prices ? number(first.prices[BENCHMARK_SYMBOL]) : 0;
+        }
         var now = currentPrice(BENCHMARK_SYMBOL, scenario);
         return start && now ? (now - start) / start * 100 : null;
       }
@@ -1030,8 +1035,11 @@
       function benchmarkSeries(scenario, type) {
         if (scenario.status === "draft") return [];
         if (type === "spy") {
-          var first = scenario.snapshots[0];
-          var start = first && first.prices ? number(first.prices[BENCHMARK_SYMBOL]) : 0;
+          var start = number(scenario.inceptionBenchmarkPrice);
+          if (!start) {
+            var first = scenario.snapshots[0];
+            start = first && first.prices ? number(first.prices[BENCHMARK_SYMBOL]) : 0;
+          }
           if (!start) return [];
           return scenario.snapshots.map(function (snap) {
             var price = snap.prices ? number(snap.prices[BENCHMARK_SYMBOL]) : 0;
@@ -1281,7 +1289,7 @@
         var d = parseInt(parts[2], 10);
         var yy = parts[0].slice(2);
         if (d >= 28) return months[m - 1] + " '" + yy;
-        return months[m - 1] + " " + d;
+        return months[m - 1] + " " + d + " '" + yy;
       }
 
       function renderContributors(metrics) {
@@ -1545,6 +1553,11 @@
             }
             return p;
           });
+          var benchPrice = currentPrice(BENCHMARK_SYMBOL, scenario);
+          if (benchPrice) {
+            scenario.inceptionBenchmarkPrice = benchPrice;
+            scenario.inceptionBenchmarkDate = now;
+          }
           scenario.snapshots = [snapshotForScenario(scenario, now)];
           return scenario;
         });
@@ -1925,6 +1938,11 @@
             p.inceptionDate = oldestIso;
           }
         });
+        var oldestSpy = historicalPrices[BENCHMARK_SYMBOL] && historicalPrices[BENCHMARK_SYMBOL][oldestDate];
+        if (oldestSpy) {
+          scenario.inceptionBenchmarkPrice = oldestSpy;
+          scenario.inceptionBenchmarkDate = oldestIso;
+        }
         var weights = scenarioWeights(scenario);
         var snapshots = [];
         quarterEnds.forEach(function (qEnd) {
