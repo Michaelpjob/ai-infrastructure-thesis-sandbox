@@ -625,43 +625,71 @@
 
       function seedStore() {
         var now = new Date().toISOString();
-        var positions = [
-          pos("NVDA", "Nvidia", "Compute", "Accelerators", "Core", 7.0),
-          pos("TSM", "Taiwan Semiconductor", "Compute", "Foundry", "Core", 6.0),
-          pos("ASML", "ASML Holding", "Compute", "Semicap", "Core", 5.0),
-          pos("AVGO", "Broadcom", "Compute", "Networking / ASIC", "Core", 5.0),
-          pos("MRVL", "Marvell Technology", "Compute", "AI silicon", "Satellite", 4.0),
-          pos("MU", "Micron Technology", "Compute", "Memory", "Satellite", 3.0),
-          pos("CRWV", "CoreWeave", "Compute", "AI cloud", "High Risk", 4.0),
-          pos("ETN", "Eaton", "Power", "Electrical equipment", "Core", 8.0),
-          pos("VRT", "Vertiv", "Power", "Thermal and power", "Satellite", 7.0),
-          pos("GEV", "GE Vernova", "Power", "Grid equipment", "Satellite", 7.0),
-          pos("CEG", "Constellation Energy", "Power", "Generation", "Satellite", 6.0),
-          pos("PWR", "Quanta Services", "Power", "Grid services", "Core", 5.0),
-          pos("NEE", "NextEra Energy", "Power", "Utilities", "Core", 4.0),
-          pos("SMR", "NuScale Power", "Power", "Nuclear optionality", "High Risk", 4.0),
-          pos("ARM", "Arm Holdings", "Edge", "CPU IP", "Satellite", 7.0),
-          pos("QCOM", "Qualcomm", "Edge", "Device silicon", "Core", 5.0),
-          pos("ON", "ON Semiconductor", "Edge", "Power semis", "Watch", 4.0),
-          pos("ALAB", "Astera Labs", "Edge", "Connectivity", "High Risk", 5.0),
-          pos("AAPL", "Apple", "Edge", "Device platform", "Core", 4.0)
+
+        var computePositions = [
+          pos("TSM", "Taiwan Semiconductor", "Compute", "Anchor (foundry tollbooth)", "Core", 28),
+          pos("AVGO", "Broadcom", "Compute", "Anchor (custom AI / networking)", "Core", 18),
+          pos("ASML", "ASML Holding", "Compute", "Chokepoint (EUV monopoly)", "Core", 18),
+          pos("NVDA", "Nvidia", "Compute", "Capped (GPU benchmark)", "Satellite", 14),
+          pos("LITE", "Lumentum", "Compute", "Optical fabric", "Satellite", 8),
+          pos("MRVL", "Marvell Technology", "Compute", "Hedge (AVGO)", "Satellite", 5),
+          pos("COHR", "Coherent", "Compute", "Hedge (LITE)", "Satellite", 4),
+          pos("ORCL", "Oracle", "Compute", "Speculative cloud tail", "High Risk", 5)
         ];
-        return {
-          schemaVersion: SCHEMA_VERSION,
-          activeScenarioId: "scn_base",
-          scenarios: [{
-            id: "scn_base",
-            name: "Base Case",
+
+        var powerPositions = [
+          pos("GEV", "GE Vernova", "Power", "Anchor (diversified power)", "Core", 20),
+          pos("ETN", "Eaton", "Power", "Wide-moat compounder", "Core", 14),
+          pos("ROK", "Rockwell Automation", "Power", "Wide-moat compounder", "Core", 13),
+          pos("EQT", "EQT Corporation", "Power", "Commodity hedge (gas)", "Satellite", 11),
+          pos("NEE", "NextEra Energy", "Power", "Regulated utility", "Core", 10),
+          pos("VRT", "Vertiv", "Power", "DC cooling tactical", "Satellite", 7),
+          pos("SIEGY", "Siemens AG ADR", "Power", "Hedge (GEV)", "Satellite", 5),
+          pos("CEG", "Constellation Energy", "Power", "Hedge (NEE)", "Satellite", 5),
+          pos("RIOT", "Riot Platforms", "Power", "Power-asset proxy (top conviction)", "High Risk", 5),
+          pos("BE", "Bloom Energy", "Power", "Speculative core", "High Risk", 4),
+          pos("CRWV", "CoreWeave", "Power", "Power-asset proxy", "High Risk", 3),
+          pos("CORZ", "Core Scientific", "Power", "Power-asset proxy", "High Risk", 3)
+        ];
+
+        var edgePositions = [
+          pos("AAPL", "Apple", "Edge", "Anchor (consumer UI)", "Core", 23),
+          pos("MSFT", "Microsoft", "Edge", "Anchor (enterprise UI)", "Core", 23),
+          pos("QCOM", "Qualcomm", "Edge", "Edge silicon", "Core", 11),
+          pos("AKAM", "Akamai Technologies", "Edge", "Edge network anchor", "Core", 10),
+          pos("NXPI", "NXP Semiconductors", "Edge", "Embedded silicon", "Core", 10),
+          pos("GOOGL", "Alphabet", "Edge", "Mirror (AAPL vertical stack)", "Core", 7),
+          pos("NET", "Cloudflare", "Edge", "Hedge (AKAM)", "Satellite", 6),
+          pos("MCHP", "Microchip", "Edge", "Hedge (NXPI)", "Satellite", 6),
+          pos("META", "Meta Platforms", "Edge", "Form-factor optionality (smart glasses)", "Satellite", 4)
+        ];
+
+        function makePlay(id, name, positions, theme, notes) {
+          var targets = { Compute: 0, Power: 0, Edge: 0 };
+          targets[theme] = 100;
+          return {
+            id: id,
+            name: name,
             createdAt: now,
             lockedAt: null,
             closedAt: null,
             status: "draft",
             positions: positions,
-            themeTargets: { Compute: 30, Power: 45, Edge: 25 },
-            riskLimits: { maxSingle: 8, maxHighRiskBucket: 25, maxTheme: 50, maxHighRiskSingle: 3, maxWatchBucket: 5, minCoreBucket: 30 },
+            themeTargets: targets,
+            riskLimits: { maxSingle: 30, maxHighRiskBucket: 25, maxTheme: 100, maxHighRiskSingle: 8, maxWatchBucket: 5, minCoreBucket: 30 },
             snapshots: [],
-            notes: ""
-          }],
+            notes: notes
+          };
+        }
+
+        return {
+          schemaVersion: SCHEMA_VERSION,
+          activeScenarioId: "scn_compute_play",
+          scenarios: [
+            makePlay("scn_compute_play", "Compute play", computePositions, "Compute", "Foundry, EUV, accelerators, optical fabric. Anchored on TSM / AVGO / ASML; NVDA capped; ORCL as speculative tail."),
+            makePlay("scn_power_play", "Power play", powerPositions, "Power", "Grid + generation + DC infra. GEV anchor, wide-moat compounders ETN/ROK, gas hedge via EQT, miners as power-asset proxies."),
+            makePlay("scn_edge_play", "Edge play", edgePositions, "Edge", "Consumer + enterprise UIs and the silicon under them. AAPL/MSFT co-anchors, QCOM/AKAM/NXPI core, META as form-factor optionality.")
+          ],
           settings: {
             provider: "stooq",
             apiKey: "",
@@ -687,9 +715,16 @@
 
       function seedQuoteCache(now) {
         var prices = {
-          NVDA: 860, TSM: 178.32, ASML: 910, AVGO: 1360, MRVL: 71, MU: 118, CRWV: 45,
-          ETN: 315, VRT: 95, GEV: 991.30, CEG: 190, PWR: 260, NEE: 72, SMR: 8.5,
-          ARM: 120, QCOM: 172, ON: 70, ALAB: 78, AAPL: 190, SPY: 520
+          // Compute play
+          TSM: 392, AVGO: 425, ASML: 1442, NVDA: 208, LITE: 580, MRVL: 98, COHR: 339, ORCL: 185,
+          // Power play
+          GEV: 991, ETN: 422, ROK: 400, EQT: 61, NEE: 88, VRT: 312, SIEGY: 140,
+          CEG: 345, RIOT: 15, BE: 170, CRWV: 118, CORZ: 20,
+          // Edge play
+          AAPL: 277, MSFT: 414, QCOM: 186, AKAM: 118, NXPI: 224, GOOGL: 415,
+          NET: 245, MCHP: 75, META: 605,
+          // Benchmark
+          SPY: 520
         };
         var cache = {};
         Object.keys(prices).forEach(function (symbol) {
