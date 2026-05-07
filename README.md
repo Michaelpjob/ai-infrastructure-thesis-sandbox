@@ -2,7 +2,9 @@
 
 A local-first thesis-tracking sandbox for hypothetical AI infrastructure allocations.
 
-Open `ai-infra-portfolio-live.html` in a browser, adjust weights, lock a scenario to capture baseline prices, then revisit after quote refreshes to see cumulative hypothetical performance versus equal-weight and SPY benchmarks.
+Live: https://michaelpjob.github.io/ai-infrastructure-thesis-sandbox/
+
+Open `index.html` in a browser (or visit the live link above), adjust weights, lock a scenario to capture baseline prices, then revisit after quote refreshes to see cumulative hypothetical performance versus equal-weight and SPY benchmarks.
 
 ## Notes
 

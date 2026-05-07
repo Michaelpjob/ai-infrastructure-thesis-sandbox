@@ -1,6 +1,6 @@
 # Update Proposal — AI Infrastructure Portfolio Tracker
 
-**File targeted:** `ai-infra-portfolio-live.html`
+**File targeted:** `index.html`
 **Goal:** reposition the tool from a real-portfolio mark-to-market dashboard into a **thesis-tracking science experiment** — users set hypothetical weights, the tool locks in a baseline, and on every return visit they see how their allocation would have performed since.
 
 Not a brokerage. Not a portfolio. A sandbox where users mess with percentages and come back to see whether their thesis was right.
