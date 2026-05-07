@@ -1196,7 +1196,9 @@
         var marks = seriesList.map(function (series) {
           if (series.points.length === 1) {
             var only = series.points[0];
-            return '<circle cx="' + x(0).toFixed(2) + '" cy="' + y(only.value).toFixed(2) + '" r="4" fill="' + series.color + '"></circle>';
+            var startX = pad, endX = x(0), startY = y(0), endY = y(only.value);
+            return '<path d="M' + startX.toFixed(2) + ' ' + startY.toFixed(2) + ' L' + endX.toFixed(2) + ' ' + endY.toFixed(2) + '" fill="none" stroke="' + series.color + '" stroke-width="2"></path>' +
+              '<circle cx="' + endX.toFixed(2) + '" cy="' + endY.toFixed(2) + '" r="3.5" fill="' + series.color + '"></circle>';
           }
           var d = series.points.map(function (p, i) { return (i ? 'L' : 'M') + x(i).toFixed(2) + ' ' + y(p.value).toFixed(2); }).join(' ');
           return '<path d="' + d + '" fill="none" stroke="' + series.color + '" stroke-width="2"></path>';
